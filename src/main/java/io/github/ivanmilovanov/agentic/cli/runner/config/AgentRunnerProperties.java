@@ -1,6 +1,7 @@
 package io.github.ivanmilovanov.agentic.cli.runner.config;
 
 import io.github.ivanmilovanov.agentic.cli.runner.exception.AgentRunnerConfigurationException;
+import io.github.ivanmilovanov.agentic.cli.runner.exception.MissingAgentCliException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -24,12 +25,11 @@ public final class AgentRunnerProperties {
     public static final String DEFAULT_PROPERTIES_FILE = "agent-runner.properties";
     public static final String CLI_PROPERTY = "agent.cli";
 
-    // Ключи настроек CLI строятся динамически по имени выбранного CLI:
-    // agent.cli.<name>.args, agent.cli.<name>.fallback.<os>, agent.cli.<name>.prefix.windows
-    private static final String CLI_KEY_PREFIX = "agent.cli.";
-    private static final String ARGS_SUFFIX = ".args";
-    private static final String FALLBACK_SUFFIX = ".fallback.";
-    private static final String PREFIX_WINDOWS_SUFFIX = ".prefix.windows";
+    // Значение agent.cli — это имя активного CLI и одновременно имя его исполняемого файла
+    // (agent.cli=qwen -> ищем бинарь qwen). Настройки к нему — плоскими ключами:
+    // agent.cli.fallback.<os>, agent.cli.prefix.windows
+    private static final String FALLBACK_PREFIX = "agent.cli.fallback.";
+    private static final String PREFIX_WINDOWS_KEY = "agent.cli.prefix.windows";
 
     private static final Pattern ENV_VAR_PATTERN = Pattern.compile("\\$\\{env\\.([^}]+)\\}");
     private static final Pattern SYS_PROP_PATTERN = Pattern.compile("\\$\\{([^}]+)\\}");
@@ -111,17 +111,30 @@ public final class AgentRunnerProperties {
     }
 
     /**
+     * Возвращает имя активного CLI (оно же — имя исполняемого файла).
+     * Ключ: {@code agent.cli}.
+     *
+     * @throws MissingAgentCliException если значение не задано
+     */
+    public static String getCliName(Properties props) {
+        String value = props.getProperty(CLI_PROPERTY);
+        if (value == null || value.isBlank()) {
+            throw new MissingAgentCliException(CLI_PROPERTY);
+        }
+        return value.trim();
+    }
+
+    /**
      * Возвращает список fallback-путей для указанной ОС с подстановкой переменных.
      * Пути в настройках разделяются точкой с запятой {@code ;}.
-     * Ключ: {@code agent.cli.<cliName>.fallback.<os>}.
+     * Ключ: {@code agent.cli.fallback.<os>}.
      *
-     * @param props   загруженные настройки
-     * @param cliName имя выбранного CLI (например, {@code qwen})
-     * @param os      тип ОС
+     * @param props загруженные настройки
+     * @param os    тип ОС
      * @return список путей (может быть пустым)
      */
-    public static List<Path> getFallbackPaths(Properties props, String cliName, OsType os) {
-        String key = CLI_KEY_PREFIX + cliName.toLowerCase() + FALLBACK_SUFFIX + os.name().toLowerCase();
+    public static List<Path> getFallbackPaths(Properties props, OsType os) {
+        String key = FALLBACK_PREFIX + os.name().toLowerCase();
         String raw = props.getProperty(key);
         if (raw == null || raw.isBlank()) {
             return List.of();
@@ -140,44 +153,20 @@ public final class AgentRunnerProperties {
     }
 
     /**
-     * Возвращает список базовых аргументов для запуска CLI.
-     * Аргументы в настройках разделяются запятой {@code ,}.
-     * Ключ: {@code agent.cli.<cliName>.args}.
-     *
-     * @param props   загруженные настройки
-     * @param cliName имя выбранного CLI (например, {@code qwen})
-     * @return список аргументов (может быть пустым)
-     */
-    public static List<String> getBaseArgs(Properties props, String cliName) {
-        String value = props.getProperty(CLI_KEY_PREFIX + cliName.toLowerCase() + ARGS_SUFFIX);
-        if (value == null || value.isBlank()) {
-            log.debug("Базовые аргументы CLI не заданы, используется пустой список");
-            return List.of();
-        }
-        List<String> args = Arrays.stream(value.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.toList());
-        log.debug("Загружены базовые аргументы CLI: {}", args);
-        return args;
-    }
-
-    /**
      * Возвращает список префиксов команды для указанной ОС.
      * Аргументы в настройках разделяются запятой {@code ,}.
-     * Ключ: {@code agent.cli.<cliName>.prefix.windows}.
+     * Ключ: {@code agent.cli.prefix.windows}.
      *
-     * @param props   загруженные настройки
-     * @param cliName имя выбранного CLI (например, {@code qwen})
-     * @param os      тип ОС
+     * @param props загруженные настройки
+     * @param os    тип ОС
      * @return список префиксов (может быть пустым)
      */
-    public static List<String> getPrefix(Properties props, String cliName, OsType os) {
+    public static List<String> getPrefix(Properties props, OsType os) {
         // Префикс определён только для Windows
         if (os != OsType.WINDOWS) {
             return List.of();
         }
-        String value = props.getProperty(CLI_KEY_PREFIX + cliName.toLowerCase() + PREFIX_WINDOWS_SUFFIX);
+        String value = props.getProperty(PREFIX_WINDOWS_KEY);
         if (value == null || value.isBlank()) {
             log.debug("Префикс команды для Windows не задан");
             return List.of();

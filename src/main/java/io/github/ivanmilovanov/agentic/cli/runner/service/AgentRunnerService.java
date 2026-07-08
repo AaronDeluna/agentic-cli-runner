@@ -29,12 +29,12 @@ public class AgentRunnerService implements AgentRunner {
     }
 
     @Override
-    public AgentResultDto executeUserPrompt(String prompt) throws Exception {
-        return agentRunner.executeUserPrompt(prompt);
+    public AgentResultDto execute(String prompt) throws Exception {
+        return agentRunner.execute(prompt);
     }
 
     @Override
-    public AgentResultDto executeSkillPrompt(String skillName, String prompt) throws Exception {
-        return agentRunner.executeSkillPrompt(skillName, prompt);
+    public AgentResultDto executeSkill(String skillName, String prompt) throws Exception {
+        return agentRunner.executeSkill(skillName, prompt);
     }
 }
