@@ -25,11 +25,17 @@ public final class AgentRunnerProperties {
     public static final String DEFAULT_PROPERTIES_FILE = "agent-runner.properties";
     public static final String CLI_PROPERTY = "agent.cli";
 
-    // Значение agent.cli — это имя активного CLI и одновременно имя его исполняемого файла
-    // (agent.cli=qwen -> ищем бинарь qwen). Настройки к нему — плоскими ключами:
-    // agent.cli.fallback.<os>, agent.cli.prefix.windows
-    private static final String FALLBACK_PREFIX = "agent.cli.fallback.";
-    private static final String PREFIX_WINDOWS_KEY = "agent.cli.prefix.windows";
+    // Значение agent.cli — имя активного CLI (оно же имя его исполняемого файла).
+    // Все настройки к нему берутся из конфига по неймспейсу agent.cli.<name>.*:
+    //   agent.cli.<name>.args           — обязательные аргументы запуска (через запятую)
+    //   agent.cli.<name>.fallback.<os>  — пути поиска бинаря (через ;)
+    //   agent.cli.<name>.prefix.windows — префикс команды на Windows
+    //   agent.cli.<name>.openai-logging — писать ли openai-логи (true/false, по умолчанию false)
+    private static final String CLI_KEY_PREFIX = "agent.cli.";
+    private static final String ARGS_SUFFIX = ".args";
+    private static final String FALLBACK_SUFFIX = ".fallback.";
+    private static final String PREFIX_WINDOWS_SUFFIX = ".prefix.windows";
+    private static final String OPENAI_LOGGING_SUFFIX = ".openai-logging";
 
     private static final Pattern ENV_VAR_PATTERN = Pattern.compile("\\$\\{env\\.([^}]+)\\}");
     private static final Pattern SYS_PROP_PATTERN = Pattern.compile("\\$\\{([^}]+)\\}");
@@ -125,16 +131,40 @@ public final class AgentRunnerProperties {
     }
 
     /**
+     * Возвращает обязательные аргументы запуска CLI (через запятую).
+     * Ключ: {@code agent.cli.<cliName>.args}.
+     *
+     * @return список аргументов (может быть пустым)
+     */
+    public static List<String> getArgs(Properties props, String cliName) {
+        String value = props.getProperty(CLI_KEY_PREFIX + cliName.toLowerCase() + ARGS_SUFFIX);
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Возвращает признак записи openai-логов для CLI.
+     * Ключ: {@code agent.cli.<cliName>.openai-logging} (по умолчанию {@code false}).
+     */
+    public static boolean isOpenaiLogging(Properties props, String cliName) {
+        String value = props.getProperty(CLI_KEY_PREFIX + cliName.toLowerCase() + OPENAI_LOGGING_SUFFIX);
+        return "true".equalsIgnoreCase(value == null ? null : value.trim());
+    }
+
+    /**
      * Возвращает список fallback-путей для указанной ОС с подстановкой переменных.
      * Пути в настройках разделяются точкой с запятой {@code ;}.
-     * Ключ: {@code agent.cli.fallback.<os>}.
+     * Ключ: {@code agent.cli.<cliName>.fallback.<os>}.
      *
-     * @param props загруженные настройки
-     * @param os    тип ОС
      * @return список путей (может быть пустым)
      */
-    public static List<Path> getFallbackPaths(Properties props, OsType os) {
-        String key = FALLBACK_PREFIX + os.name().toLowerCase();
+    public static List<Path> getFallbackPaths(Properties props, String cliName, OsType os) {
+        String key = CLI_KEY_PREFIX + cliName.toLowerCase() + FALLBACK_SUFFIX + os.name().toLowerCase();
         String raw = props.getProperty(key);
         if (raw == null || raw.isBlank()) {
             return List.of();
@@ -155,18 +185,16 @@ public final class AgentRunnerProperties {
     /**
      * Возвращает список префиксов команды для указанной ОС.
      * Аргументы в настройках разделяются запятой {@code ,}.
-     * Ключ: {@code agent.cli.prefix.windows}.
+     * Ключ: {@code agent.cli.<cliName>.prefix.windows}.
      *
-     * @param props загруженные настройки
-     * @param os    тип ОС
      * @return список префиксов (может быть пустым)
      */
-    public static List<String> getPrefix(Properties props, OsType os) {
+    public static List<String> getPrefix(Properties props, String cliName, OsType os) {
         // Префикс определён только для Windows
         if (os != OsType.WINDOWS) {
             return List.of();
         }
-        String value = props.getProperty(PREFIX_WINDOWS_KEY);
+        String value = props.getProperty(CLI_KEY_PREFIX + cliName.toLowerCase() + PREFIX_WINDOWS_SUFFIX);
         if (value == null || value.isBlank()) {
             log.debug("Префикс команды для Windows не задан");
             return List.of();

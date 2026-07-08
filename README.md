@@ -2,7 +2,7 @@
 
 Java-библиотека для запуска агентских CLI из вашего кода. Она сама находит исполняемый файл CLI, собирает команду, запускает процесс, разбирает его stream-json вывод и сохраняет лог запуска на диск. Никакого REST, никакого Spring — просто Java-классы, которые можно встроить куда угодно: в CI-скрипт, тестовый фреймворк или бэкенд-сервис.
 
-Библиотека не привязана к одному CLI: значение `agent.cli` — это имя исполняемого файла, а механика запуска общая для всех совместимых CLI со stream-json выводом ([Qwen Code](https://github.com/QwenLM/qwen-code), GigaCode и их форки). Добавить такой CLI = поменять одну строку в конфиге, кода писать не нужно.
+Библиотека не привязана к одному CLI и не хранит их флаги в коде: имя бинаря и аргументы запуска задаются в конфиге по неймспейсу `agent.cli.<name>.*`. Так поддерживается любой stream-json-совместимый CLI (например, [Qwen Code](https://github.com/QwenLM/qwen-code) и его форки) без правок кода.
 
 ## Требования
 
@@ -28,39 +28,46 @@ runner.executeSkill("review", "Проверь этот PR на баги");
 
 ## Конфигурация: agent-runner.properties
 
-Файл ищется сначала в classpath, затем в текущей директории. Минимальный пример:
+Всё, что нужно для запуска CLI, задаётся в конфиге по неймспейсу `agent.cli.<name>.*` —
+библиотека не хранит флаги CLI в коде. Файл ищется сначала в classpath, затем в текущей
+директории. Пример для Qwen:
 
 ```properties
 agent.cli=qwen
-agent.cli.fallback.mac=${env.HOME}/.local/bin
-agent.cli.fallback.linux=${env.HOME}/.local/bin
-agent.cli.prefix.windows=cmd,/c
+agent.cli.qwen.args=--output-format,stream-json,--approval-mode,yolo
+agent.cli.qwen.prefix.windows=cmd,/c
+agent.cli.qwen.fallback.mac=${env.HOME}/.local/bin
+agent.cli.qwen.fallback.linux=${env.HOME}/.local/bin
 ```
 
 Что означают ключи:
 
 | Ключ | Описание |
 |---|---|
-| `agent.cli` | Имя активного CLI = имя его исполняемого файла (`qwen`, `gigacode`, …). Настройки одного активного CLI на файл. |
-| `agent.cli.fallback.<os>` | Запасные пути поиска исполняемого файла для конкретной ОС (`mac`/`linux`/`windows`), через `;` |
-| `agent.cli.prefix.windows` | Префикс команды для Windows (например, `cmd,/c`) |
+| `agent.cli` | Имя активного CLI = имя его исполняемого файла (`qwen`, `codex`, …). Один активный CLI на файл. |
+| `agent.cli.<name>.args` | Обязательные аргументы запуска, через запятую (`prompt` добавляется автоматически в конце) |
+| `agent.cli.<name>.fallback.<os>` | Запасные пути поиска бинаря для ОС (`mac`/`linux`/`windows`), через `;` |
+| `agent.cli.<name>.prefix.windows` | Префикс команды для Windows (например, `cmd,/c`) |
+| `agent.cli.<name>.openai-logging` | `true` — писать openai-логи в директорию запуска (по умолчанию `false`) |
 
 Пути и значения поддерживают подстановку переменных: `${env.HOME}`, `${user.home}`, `$HOME`, `$USERPROFILE`.
 
-Поиск исполняемого файла CLI идёт в таком порядке: переменная окружения `<COMMAND>_PATH` (например, `QWEN_PATH`) → системный `PATH` → fallback-пути из конфига.
+Поиск бинаря идёт в порядке: переменная окружения `<NAME>_PATH` (например, `QWEN_PATH`) → системный `PATH` → fallback-пути из конфига.
 
-Аргументы `--output-format stream-json` и `--approval-mode yolo` — контракт библиотеки (парсер разбирает именно stream-json, а headless-запуск не должен зависать на подтверждениях), поэтому они зашиты в коде и не настраиваются.
+## Примеры конфигурации под разные CLI
 
-## Как добавить новый CLI
+Библиотека запускает `[prefix] <бинарь> <args...> <prompt>` и разбирает stream-json вывод.
+Под конкретный CLI меняются `agent.cli` и его `.args`:
 
-- **CLI-форк со stream-json выводом** (GigaCode и подобные) — кода писать не нужно. Просто укажите его имя и пути:
+| CLI | `agent.cli` | `agent.cli.<name>.args` | Статус |
+|---|---|---|---|
+| Qwen Code | `qwen` | `--output-format,stream-json,--approval-mode,yolo` | ✅ проверено |
+| Codex (OpenAI) | `codex` | `exec,--json,--dangerously-bypass-approvals-and-sandbox` | 🚧 команда собирается, разбор вывода не выверен |
+| Claude Code | `claude` | `-p,--output-format,stream-json,--dangerously-skip-permissions` | 🚧 флаги ориентировочные |
 
-  ```properties
-  agent.cli=gigacode
-  agent.cli.fallback.mac=${env.HOME}/.local/bin
-  ```
-
-- **CLI с другим форматом вывода** — реализуйте `CommandFactory` (сборка команды) и/или свой парсер вместо `AgentStreamJsonParser`, и передайте их в `AgentRunnerImpl`. Точку расширения под парсер добавим, когда появится реальный кейс.
+`codex`/`claude` — экспериментально: команда собирается корректно, но структура их событий
+отличается от qwen, поэтому финальный ответ может не извлекаться общим `AgentStreamJsonParser`.
+Полноценная поддержка (свой разбор вывода) — в работе.
 
 ## Подключение
 
@@ -70,20 +77,20 @@ agent.cli.prefix.windows=cmd,/c
 <dependency>
     <groupId>io.github.ivanmilovanov</groupId>
     <artifactId>agentic-cli-runner</artifactId>
-    <version>0.0.5-alpha</version>
+    <version>0.0.8-alpha</version>
 </dependency>
 ```
 
 **Gradle** (Groovy DSL, `build.gradle`):
 
 ```groovy
-implementation 'io.github.ivanmilovanov:agentic-cli-runner:0.0.5-alpha'
+implementation 'io.github.ivanmilovanov:agentic-cli-runner:0.0.8-alpha'
 ```
 
 **Gradle** (Kotlin DSL, `build.gradle.kts`):
 
 ```kotlin
-implementation("io.github.ivanmilovanov:agentic-cli-runner:0.0.5-alpha")
+implementation("io.github.ivanmilovanov:agentic-cli-runner:0.0.8-alpha")
 ```
 
 Убедитесь, что в сборке подключён репозиторий `mavenCentral()` (Maven Central подключён по умолчанию).

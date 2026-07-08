@@ -6,7 +6,7 @@
 
     <groupId>io.github.ivanmilovanov</groupId>
     <artifactId>agentic-cli-runner</artifactId>
-    <version>0.0.5-alpha</version>
+    <version>0.0.8-alpha</version>
     <packaging>jar</packaging>
 
     <name>agentic-cli-runner</name>

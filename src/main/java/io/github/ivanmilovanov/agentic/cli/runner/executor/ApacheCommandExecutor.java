@@ -7,18 +7,42 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteWatchdog;
+import org.apache.commons.exec.LogOutputStream;
 import org.apache.commons.exec.PumpStreamHandler;
 
-import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
+import java.io.OutputStream;
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 /**
  * Реализация {@link CommandExecutor} на основе Apache Commons Exec: запускает процесс,
  * ограничивает его по таймауту через watchdog и собирает stdout/stderr.
+ * <p>
+ * Вывод CLI логируется построчно по мере поступления (чтобы на длинных прогонах было видно,
+ * что агент жив и что делает), и одновременно накапливается целиком — итоговый результат
+ * разбирается уже после завершения процесса. Строки stdout перед выводом в живой лог
+ * прогоняются через {@code stdoutLineFormatter} — так «сырой» stream-json превращается
+ * в читаемый процесс работы агента.
+ * </p>
  */
 @Slf4j
 public class ApacheCommandExecutor implements CommandExecutor {
+
+    /** Преобразователь строк stdout для живого лога (по умолчанию — как есть). */
+    private final UnaryOperator<String> stdoutLineFormatter;
+
+    /** Исполнитель без форматирования живого лога — stdout пишется «как есть». */
+    public ApacheCommandExecutor() {
+        this(UnaryOperator.identity());
+    }
+
+    /**
+     * @param stdoutLineFormatter превращает строку stdout в читаемый вид для живого лога;
+     *                            на накопление полного stdout не влияет
+     */
+    public ApacheCommandExecutor(UnaryOperator<String> stdoutLineFormatter) {
+        this.stdoutLineFormatter = stdoutLineFormatter != null ? stdoutLineFormatter : UnaryOperator.identity();
+    }
 
     /**
      * @throws MissingCommandPartsException если команда в запросе пустая
@@ -35,8 +59,10 @@ public class ApacheCommandExecutor implements CommandExecutor {
             command.addArgument(commandParts.get(i), false);
         }
 
-        ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-        ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+        StringBuilder stdout = new StringBuilder();
+        StringBuilder stderr = new StringBuilder();
+        OutputStream stdoutStream = liveStream(stdout, "[CLI]", stdoutLineFormatter);
+        OutputStream stderrStream = liveStream(stderr, "[CLI-ERR]", UnaryOperator.identity());
 
         ExecuteWatchdog watchdog = ExecuteWatchdog.builder()
                 .setTimeout(request.getTimeout())
@@ -46,7 +72,7 @@ public class ApacheCommandExecutor implements CommandExecutor {
                 .get();
 
         executor.setWatchdog(watchdog);
-        executor.setStreamHandler(new PumpStreamHandler(stdout, stderr));
+        executor.setStreamHandler(new PumpStreamHandler(stdoutStream, stderrStream));
         executor.setExitValues(null);
         if (request.getWorkingDirectory() != null) {
             executor.setWorkingDirectory(request.getWorkingDirectory().toFile());
@@ -60,10 +86,25 @@ public class ApacheCommandExecutor implements CommandExecutor {
         int exitCode = executor.execute(command);
 
         return new CommandResultDto(
-                stdout.toString(StandardCharsets.UTF_8),
-                stderr.toString(StandardCharsets.UTF_8),
+                stdout.toString(),
+                stderr.toString(),
                 exitCode,
                 watchdog.killedProcess()
         );
+    }
+
+    /**
+     * Поток, который на каждую строку вывода CLI: дописывает её целиком в {@code accumulator}
+     * (для последующего разбора) и логирует в рантайме — предварительно прогнав через
+     * {@code formatter} (читаемый вид). Строка выводится целиком, без обрезки.
+     */
+    private static OutputStream liveStream(StringBuilder accumulator, String tag, UnaryOperator<String> formatter) {
+        return new LogOutputStream() {
+            @Override
+            protected void processLine(String line, int level) {
+                accumulator.append(line).append('\n');
+                log.info("{} {}", tag, formatter.apply(line));
+            }
+        };
     }
 }
