@@ -74,22 +74,22 @@ agent.cli.qwen.fallback.linux=${env.HOME}/.local/bin
 
 ```xml
 <dependency>
-    <groupId>io.github.ivanmilovanov</groupId>
+    <groupId>io.github.aarondeluna</groupId>
     <artifactId>agentic-cli-runner</artifactId>
-    <version>0.0.9-alpha</version>
+    <version>1.0.0</version>
 </dependency>
 ```
 
 **Gradle** (Groovy DSL, `build.gradle`):
 
 ```groovy
-implementation 'io.github.ivanmilovanov:agentic-cli-runner:0.0.9-alpha'
+implementation 'io.github.aarondeluna:agentic-cli-runner:1.0.0'
 ```
 
 **Gradle** (Kotlin DSL, `build.gradle.kts`):
 
 ```kotlin
-implementation("io.github.ivanmilovanov:agentic-cli-runner:0.0.9-alpha")
+implementation("io.github.aarondeluna:agentic-cli-runner:1.0.0")
 ```
 
 Убедитесь, что в сборке подключён репозиторий `mavenCentral()` (Maven Central подключён по умолчанию).

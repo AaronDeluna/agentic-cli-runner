@@ -4,13 +4,41 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.github.ivanmilovanov</groupId>
+    <groupId>io.github.aarondeluna</groupId>
     <artifactId>agentic-cli-runner</artifactId>
-    <version>0.0.9-alpha</version>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
 
     <name>agentic-cli-runner</name>
     <description>Standalone library for running agentic CLI processes</description>
+    <url>https://github.com/AaronDeluna/agentic-cli-runner</url>
+
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>AaronDeluna</id>
+            <name>Ivan Milovanov</name>
+            <url>https://github.com/AaronDeluna</url>
+        </developer>
+        <developer>
+            <id>Mirents</id>
+            <name>Vadim Mikhaylichenko</name>
+            <url>https://github.com/Mirents</url>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:https://github.com/AaronDeluna/agentic-cli-runner.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/AaronDeluna/agentic-cli-runner.git</developerConnection>
+        <url>https://github.com/AaronDeluna/agentic-cli-runner</url>
+        <tag>HEAD</tag>
+    </scm>
 
     <properties>
         <java.version>17</java.version>
@@ -31,6 +59,8 @@
         <maven.source.plugin.version>3.3.1</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.6.3</maven.javadoc.plugin.version>
         <maven.surefire.plugin.version>3.2.5</maven.surefire.plugin.version>
+        <maven.gpg.plugin.version>3.2.7</maven.gpg.plugin.version>
+        <central.publishing.plugin.version>0.7.0</central.publishing.plugin.version>
 
         <!-- Test dependency versions -->
         <junit.version>5.10.2</junit.version>
@@ -151,6 +181,35 @@
                     <!-- OsAwareCommandResolverTest mutates the process environment via reflection
                          to test QWEN_PATH priority; requires these modules opened. -->
                     <argLine>--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED</argLine>
+                </configuration>
+            </plugin>
+
+            <!-- GPG signing of all artifacts (required by Maven Central) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>${maven.gpg.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Publishing to the Central Portal (central.sonatype.com) -->
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>${central.publishing.plugin.version}</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                    <autoPublish>true</autoPublish>
+                    <waitUntil>published</waitUntil>
                 </configuration>
             </plugin>
         </plugins>
