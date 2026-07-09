@@ -48,7 +48,6 @@ agent.cli.qwen.fallback.linux=${env.HOME}/.local/bin
 | `agent.cli.<name>.args` | Обязательные аргументы запуска, через запятую (`prompt` добавляется автоматически в конце) |
 | `agent.cli.<name>.fallback.<os>` | Запасные пути поиска бинаря для ОС (`mac`/`linux`/`windows`), через `;` |
 | `agent.cli.<name>.prefix.windows` | Префикс команды для Windows (например, `cmd,/c`) |
-| `agent.cli.<name>.openai-logging` | `true` — писать openai-логи в директорию запуска (по умолчанию `false`) |
 
 Пути и значения поддерживают подстановку переменных: `${env.HOME}`, `${user.home}`, `$HOME`, `$USERPROFILE`.
 
@@ -59,11 +58,11 @@ agent.cli.qwen.fallback.linux=${env.HOME}/.local/bin
 Библиотека запускает `[prefix] <бинарь> <args...> <prompt>` и разбирает stream-json вывод.
 Под конкретный CLI меняются `agent.cli` и его `.args`:
 
-| CLI | `agent.cli` | `agent.cli.<name>.args` | Статус |
-|---|---|---|---|
-| Qwen Code | `qwen` | `--output-format,stream-json,--approval-mode,yolo` | ✅ проверено |
-| Codex (OpenAI) | `codex` | `exec,--json,--dangerously-bypass-approvals-and-sandbox` | 🚧 команда собирается, разбор вывода не выверен |
-| Claude Code | `claude` | `-p,--output-format,stream-json,--dangerously-skip-permissions` | 🚧 флаги ориентировочные |
+| CLI | `agent.cli` | `agent.cli.<name>.args` |
+|---|---|---|
+| Qwen Code | `qwen` | `--output-format,stream-json,--approval-mode,yolo` |
+| Codex (OpenAI) | `codex` | `exec,--json,--dangerously-bypass-approvals-and-sandbox` |
+| Claude Code | `claude` | `-p,--output-format,stream-json,--dangerously-skip-permissions` |
 
 `codex`/`claude` — экспериментально: команда собирается корректно, но структура их событий
 отличается от qwen, поэтому финальный ответ может не извлекаться общим `AgentStreamJsonParser`.
@@ -77,20 +76,20 @@ agent.cli.qwen.fallback.linux=${env.HOME}/.local/bin
 <dependency>
     <groupId>io.github.ivanmilovanov</groupId>
     <artifactId>agentic-cli-runner</artifactId>
-    <version>0.0.8-alpha</version>
+    <version>0.0.9-alpha</version>
 </dependency>
 ```
 
 **Gradle** (Groovy DSL, `build.gradle`):
 
 ```groovy
-implementation 'io.github.ivanmilovanov:agentic-cli-runner:0.0.8-alpha'
+implementation 'io.github.ivanmilovanov:agentic-cli-runner:0.0.9-alpha'
 ```
 
 **Gradle** (Kotlin DSL, `build.gradle.kts`):
 
 ```kotlin
-implementation("io.github.ivanmilovanov:agentic-cli-runner:0.0.8-alpha")
+implementation("io.github.ivanmilovanov:agentic-cli-runner:0.0.9-alpha")
 ```
 
 Убедитесь, что в сборке подключён репозиторий `mavenCentral()` (Maven Central подключён по умолчанию).

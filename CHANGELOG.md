@@ -2,6 +2,18 @@
 
 Все значимые изменения проекта фиксируются здесь.
 
+## [0.0.9-alpha] — 2026-07-08
+
+### Добавлено
+- Живой лог процесса агента в рантайме: `parser.StreamJsonLineFormatter` превращает поток
+  stream-json в читаемые строки (мысли, вызовы инструментов, итог). Форматтер подключается
+  в `ApacheCommandExecutor` (по умолчанию — в `AgentRunnerFactory.defaultFactory`).
+
+### Удалено
+- Флаг `agent.cli.<name>.openai-logging` и метод `AgentRunnerProperties.isOpenaiLogging` —
+  флаги `--openai-logging`/`--openai-logging-dir` были qwen-специфичными, но хардкодились в
+  «generic» фабрике. `CommandFactory.buildCommand` больше не принимает `logDir`.
+
 ## [0.0.8-alpha] — 2026-07-08
 
 ### Изменено

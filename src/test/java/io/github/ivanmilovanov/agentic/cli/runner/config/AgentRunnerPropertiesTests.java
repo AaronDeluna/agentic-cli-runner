@@ -32,15 +32,6 @@ class AgentRunnerPropertiesTests {
     }
 
     @Test
-    void readsOpenaiLoggingFlag() {
-        Properties properties = new Properties();
-        properties.setProperty("agent.cli.qwen.openai-logging", "true");
-
-        assertThat(AgentRunnerProperties.isOpenaiLogging(properties, "qwen")).isTrue();
-        assertThat(AgentRunnerProperties.isOpenaiLogging(new Properties(), "qwen")).isFalse();
-    }
-
-    @Test
     void expandsEnvVariablesInFallbackPaths() {
         String home = System.getenv("HOME");
         org.junit.jupiter.api.Assumptions.assumeTrue(home != null && !home.isBlank());

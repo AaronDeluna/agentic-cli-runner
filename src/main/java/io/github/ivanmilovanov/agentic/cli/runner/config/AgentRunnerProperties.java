@@ -30,12 +30,10 @@ public final class AgentRunnerProperties {
     //   agent.cli.<name>.args           — обязательные аргументы запуска (через запятую)
     //   agent.cli.<name>.fallback.<os>  — пути поиска бинаря (через ;)
     //   agent.cli.<name>.prefix.windows — префикс команды на Windows
-    //   agent.cli.<name>.openai-logging — писать ли openai-логи (true/false, по умолчанию false)
     private static final String CLI_KEY_PREFIX = "agent.cli.";
     private static final String ARGS_SUFFIX = ".args";
     private static final String FALLBACK_SUFFIX = ".fallback.";
     private static final String PREFIX_WINDOWS_SUFFIX = ".prefix.windows";
-    private static final String OPENAI_LOGGING_SUFFIX = ".openai-logging";
 
     private static final Pattern ENV_VAR_PATTERN = Pattern.compile("\\$\\{env\\.([^}]+)\\}");
     private static final Pattern SYS_PROP_PATTERN = Pattern.compile("\\$\\{([^}]+)\\}");
@@ -145,15 +143,6 @@ public final class AgentRunnerProperties {
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
-    }
-
-    /**
-     * Возвращает признак записи openai-логов для CLI.
-     * Ключ: {@code agent.cli.<cliName>.openai-logging} (по умолчанию {@code false}).
-     */
-    public static boolean isOpenaiLogging(Properties props, String cliName) {
-        String value = props.getProperty(CLI_KEY_PREFIX + cliName.toLowerCase() + OPENAI_LOGGING_SUFFIX);
-        return "true".equalsIgnoreCase(value == null ? null : value.trim());
     }
 
     /**

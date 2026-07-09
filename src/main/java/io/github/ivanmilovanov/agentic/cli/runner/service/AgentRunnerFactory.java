@@ -80,13 +80,12 @@ public class AgentRunnerFactory {
 
     /**
      * Собирает {@link CommandFactory} из настроек CLI ({@code agent.cli.<name>.*}).
-     * Имя бинаря = значение {@code agent.cli}; аргументы, логирование, пути и префикс — из конфига.
+     * Имя бинаря = значение {@code agent.cli}; аргументы, пути и префикс — из конфига.
      */
     public static CommandFactory createCommandFactory(Properties props) {
         String cliName = AgentRunnerProperties.getCliName(props);
 
         List<String> args = AgentRunnerProperties.getArgs(props, cliName);
-        boolean openaiLogging = AgentRunnerProperties.isOpenaiLogging(props, cliName);
 
         // Fallback-пути поиска исполняемого файла по ОС
         Map<OsType, List<Path>> fallbacks = new HashMap<>();
@@ -101,6 +100,6 @@ public class AgentRunnerFactory {
         // Префикс команды (только для Windows)
         List<String> prefix = AgentRunnerProperties.getPrefix(props, cliName, OsType.detect());
 
-        return new StreamJsonCommandFactory(resolver, cliName, args, openaiLogging, prefix);
+        return new StreamJsonCommandFactory(resolver, cliName, args, prefix);
     }
 }

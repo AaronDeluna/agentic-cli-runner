@@ -6,7 +6,7 @@ import java.nio.file.Path;
  * Контекст однократного запуска агента — типизированный вид над готовой структурой запуска:
  * <pre>
  * &lt;workspace&gt;/&lt;uuid&gt;/sorce/   — рабочая область запуска (.qwen со скилами, структура проекта)
- * &lt;workspace&gt;/&lt;uuid&gt;/logs/    — логи запуска (log.json и openai-логи)
+ * &lt;workspace&gt;/&lt;uuid&gt;/logs/    — логи запуска (log.json)
  * </pre>
  * Конструктор принимает путь к {@code sorce}; остальные пути и runId вычисляются от него.
  * Название {@code sorce} — намеренная опечатка, сохранённая для обратной совместимости.
@@ -41,7 +41,7 @@ public class AgentRunContext {
     }
 
     /**
-     * Директория логов запуска ({@code logs}): сюда пишется {@code log.json} и openai-логи.
+     * Директория логов запуска ({@code logs}): сюда пишется {@code log.json}.
      */
     public Path getRunDir() {
         return logsDir;

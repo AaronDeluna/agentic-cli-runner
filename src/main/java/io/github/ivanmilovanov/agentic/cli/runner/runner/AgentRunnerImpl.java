@@ -74,7 +74,7 @@ public class AgentRunnerImpl implements AgentRunner {
         log.info("[USER_QUERY]: {}", prompt);
         Files.createDirectories(agentRunContext.getRunDir());
 
-        List<String> command = commandFactory.buildCommand(prompt, agentRunContext.getRunDir());
+        List<String> command = commandFactory.buildCommand(prompt);
 
         Instant startedAt = Instant.now();
         CommandResultDto result = commandExecutor.execute(new CommandRequestDto(
