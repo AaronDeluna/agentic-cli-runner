@@ -3,8 +3,6 @@ package io.github.ivanmilovanov.agentic.cli.runner.context;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
 
@@ -14,37 +12,36 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 class AgentRunContextTests {
 
     @Test
-    void workspaceIsTheSorceDirectory(@TempDir Path workspace) throws IOException {
-        Path runRoot = Files.createDirectory(workspace.resolve(UUID.randomUUID().toString()));
-        Path sourceDir = Files.createDirectory(runRoot.resolve("sorce"));
+    void workspaceIsExactlyThePassedDirectory(@TempDir Path workspace) {
+        AgentRunContext context = new AgentRunContext(workspace);
 
-        AgentRunContext context = new AgentRunContext(sourceDir);
-
-        assertThat(context.getWorkspace()).isEqualTo(sourceDir);
-        assertThat(context.getWorkspace().getFileName().toString()).isEqualTo("sorce");
+        assertThat(context.getWorkspace()).isEqualTo(workspace);
     }
 
     @Test
-    void runDirIsTheLogsDirectorySiblingOfSorce(@TempDir Path workspace) throws IOException {
-        Path runRoot = Files.createDirectory(workspace.resolve(UUID.randomUUID().toString()));
-        Path sourceDir = Files.createDirectory(runRoot.resolve("sorce"));
+    void runIdIsAFreshlyGeneratedUuid(@TempDir Path workspace) {
+        AgentRunContext context = new AgentRunContext(workspace);
 
-        AgentRunContext context = new AgentRunContext(sourceDir);
-
-        assertThat(context.getRunDir().getFileName().toString()).isEqualTo("logs");
-        assertThat(context.getRunDir().getParent()).isEqualTo(runRoot);
-    }
-
-    @Test
-    void runIdIsTheParentDirectoryNameAndAValidUuid(@TempDir Path workspace) throws IOException {
-        UUID expectedRunId = UUID.randomUUID();
-        Path runRoot = Files.createDirectory(workspace.resolve(expectedRunId.toString()));
-        Path sourceDir = Files.createDirectory(runRoot.resolve("sorce"));
-
-        AgentRunContext context = new AgentRunContext(sourceDir);
-
-        assertThat(context.getRunId()).isNotNull();
-        assertThat(context.getRunId()).isEqualTo(expectedRunId.toString());
+        assertThat(context.getRunId()).isNotBlank();
         assertThatCode(() -> UUID.fromString(context.getRunId())).doesNotThrowAnyException();
+    }
+
+    @Test
+    void eachContextGetsItsOwnRunId(@TempDir Path workspace) {
+        AgentRunContext first = new AgentRunContext(workspace);
+        AgentRunContext second = new AgentRunContext(workspace);
+
+        assertThat(first.getRunId()).isNotEqualTo(second.getRunId());
+    }
+
+    @Test
+    void logFileLivesUnderBuildDirInAgenticCliRunnerNamedByRunId(@TempDir Path workspace) {
+        AgentRunContext context = new AgentRunContext(workspace);
+
+        Path logFile = context.getLogFile();
+        // Тесты SDK гоняются Maven-ом, cwd содержит pom.xml -> buildDir = target.
+        assertThat(logFile.getFileName().toString()).isEqualTo(context.getRunId() + ".json");
+        assertThat(logFile.getParent().getFileName().toString()).isEqualTo("agentic-cli-runner");
+        assertThat(logFile.getParent().getParent().getFileName().toString()).isEqualTo("target");
     }
 }

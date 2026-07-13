@@ -10,26 +10,36 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Общий парсер stream-json вывода CLI-агентов (Qwen, Claude Code, Codex —
- * все они пишут поток событий в этом формате).
+ * Разбор stream-json вывода агентских CLI (Qwen, Claude Code, Codex).
  */
 public class AgentStreamJsonParser {
 
     private final ObjectMapper objectMapper;
     private final ObjectReader eventReader;
 
-    /** Создаёт парсер со стандартным {@link ObjectMapper}. */
+    /**
+     * Создаёт парсер со стандартным {@link ObjectMapper}.
+     */
     public AgentStreamJsonParser() {
         this(new ObjectMapper());
     }
 
-    /** Создаёт парсер с указанным {@link ObjectMapper} (например, с кастомными настройками). */
+    /**
+     * Создаёт парсер с переданным {@link ObjectMapper}.
+     *
+     * @param objectMapper маппер для чтения событий
+     */
     public AgentStreamJsonParser(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
         this.eventReader = objectMapper.readerFor(JsonNode.class);
     }
 
-    /** Разбирает поток JSON-событий и извлекает из него финальный результат агента. */
+    /**
+     * Разбирает поток JSON-событий и извлекает финальный результат агента.
+     *
+     * @param streamJson stream-json вывод CLI
+     * @return события и финальный результат
+     */
     public AgentLogDto parse(String streamJson) throws Exception {
         if (streamJson == null || streamJson.isBlank()) {
             return new AgentLogDto(List.of(), "[]", null);

@@ -15,29 +15,27 @@ import java.util.List;
 import java.util.function.UnaryOperator;
 
 /**
- * Реализация {@link CommandExecutor} на основе Apache Commons Exec: запускает процесс,
- * ограничивает его по таймауту через watchdog и собирает stdout/stderr.
+ * Реализация {@link CommandExecutor} на Apache Commons Exec: запуск процесса,
+ * ограничение по таймауту через watchdog, сбор stdout/stderr.
  * <p>
- * Вывод CLI логируется построчно по мере поступления (чтобы на длинных прогонах было видно,
- * что агент жив и что делает), и одновременно накапливается целиком — итоговый результат
- * разбирается уже после завершения процесса. Строки stdout перед выводом в живой лог
- * прогоняются через {@code stdoutLineFormatter} — так «сырой» stream-json превращается
- * в читаемый процесс работы агента.
- * </p>
+ * Вывод логируется построчно по мере поступления и одновременно накапливается целиком;
+ * итоговый результат разбирается после завершения процесса. Перед выводом в живой лог
+ * строки stdout прогоняются через {@code stdoutLineFormatter}.
  */
 @Slf4j
 public class ApacheCommandExecutor implements CommandExecutor {
 
-    /** Преобразователь строк stdout для живого лога (по умолчанию — как есть). */
     private final UnaryOperator<String> stdoutLineFormatter;
 
-    /** Исполнитель без форматирования живого лога — stdout пишется «как есть». */
+    /**
+     * Создаёт исполнитель без форматирования живого лога (stdout выводится как есть).
+     */
     public ApacheCommandExecutor() {
         this(UnaryOperator.identity());
     }
 
     /**
-     * @param stdoutLineFormatter превращает строку stdout в читаемый вид для живого лога;
+     * @param stdoutLineFormatter форматирует строку stdout для живого лога;
      *                            на накопление полного stdout не влияет
      */
     public ApacheCommandExecutor(UnaryOperator<String> stdoutLineFormatter) {
@@ -93,11 +91,7 @@ public class ApacheCommandExecutor implements CommandExecutor {
         );
     }
 
-    /**
-     * Поток, который на каждую строку вывода CLI: дописывает её целиком в {@code accumulator}
-     * (для последующего разбора) и логирует в рантайме — предварительно прогнав через
-     * {@code formatter} (читаемый вид). Строка выводится целиком, без обрезки.
-     */
+    // На каждую строку: дописывает её в accumulator (для разбора) и логирует через formatter.
     private static OutputStream liveStream(StringBuilder accumulator, String tag, UnaryOperator<String> formatter) {
         return new LogOutputStream() {
             @Override

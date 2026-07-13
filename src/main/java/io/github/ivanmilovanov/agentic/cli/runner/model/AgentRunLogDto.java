@@ -8,7 +8,7 @@ import lombok.Getter;
 import java.util.List;
 
 /**
- * Запись лога запуска агента, сохраняемая в файл {@code log.json}.
+ * Запись лога запуска агента, сохраняемая в {@code <buildDir>/agentic-cli-runner/<uuid>.json}.
  */
 @Getter
 @Builder

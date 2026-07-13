@@ -7,18 +7,24 @@ import io.github.ivanmilovanov.agentic.cli.runner.model.AgentResultDto;
 import java.nio.file.Path;
 
 /**
- * Точка входа для использования библиотеки: собирает {@link AgentRunner} из настроек
- * по умолчанию и делегирует ему выполнение запросов.
+ * Точка входа библиотеки: собирает {@link AgentRunner} из настроек по умолчанию
+ * и делегирует ему выполнение запросов.
  */
 public class AgentRunnerService implements AgentRunner {
 
     private final AgentRunner agentRunner;
 
     /**
-     * Запускает агента в указанной рабочей области (workspace).
-     * Внутри workspace может находиться директория {@code .qwen/} со скилами.
+     * Создаёт сервис, выполняющий запросы в текущей рабочей директории (cwd).
+     */
+    public AgentRunnerService() {
+        this(Path.of("").toAbsolutePath());
+    }
+
+    /**
+     * Создаёт сервис, выполняющий запросы в указанной рабочей директории.
      *
-     * @param workspace путь к рабочей области
+     * @param workspace рабочая директория запуска CLI; может содержать {@code .qwen/} со скилами
      */
     public AgentRunnerService(Path workspace) {
         this(AgentRunnerFactory.defaultFactory(workspace).create(AgentRunnerProperties.loadDefault()));

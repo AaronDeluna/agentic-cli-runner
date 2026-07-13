@@ -1,8 +1,8 @@
 # agentic-cli-runner
 
-Java-библиотека для запуска агентских CLI из вашего кода. Она сама находит исполняемый файл CLI, собирает команду, запускает процесс, разбирает его stream-json вывод и сохраняет лог запуска на диск. Никакого REST, никакого Spring — просто Java-классы, которые можно встроить куда угодно: в CI-скрипт, тестовый фреймворк или бэкенд-сервис.
+Java-библиотека для запуска агентских CLI из кода: находит исполняемый файл CLI, собирает команду, запускает процесс, разбирает stream-json вывод и сохраняет лог запуска на диск. Без внешних зависимостей от REST или Spring — только Java-классы для встраивания в CI, тесты или бэкенд.
 
-Библиотека не привязана к одному CLI и не хранит их флаги в коде: имя бинаря и аргументы запуска задаются в конфиге по неймспейсу `agent.cli.<name>.*`. Так поддерживается любой stream-json-совместимый CLI (например, [Qwen Code](https://github.com/QwenLM/qwen-code) и его форки) без правок кода.
+Библиотека не привязана к конкретному CLI и не хранит их флаги в коде: имя бинаря и аргументы запуска задаются в конфиге по неймспейсу `agent.cli.<name>.*`. Поддерживается любой stream-json-совместимый CLI (например, [Qwen Code](https://github.com/QwenLM/qwen-code) и его форки) без правок кода.
 
 ## Требования
 
@@ -13,11 +13,13 @@ Java-библиотека для запуска агентских CLI из ва
 ## Quick Start
 
 ```java
-Path workspace = Path.of("/path/to/workspace"); // здесь может лежать .qwen/ со скилами
-AgentRunner runner = new AgentRunnerService(workspace);
-
-AgentResultDto result = runner.execute("Объясни, что делает этот код");
+// Самый короткий вариант — запуск прямо в текущей директории (cwd):
+AgentResultDto result = new AgentRunnerService().execute("Объясни, что делает этот код");
 System.out.println(result.getFinalResult());
+
+// Либо с явной рабочей областью (в ней может лежать .qwen/ со скилами):
+Path workspace = Path.of("/path/to/workspace");
+AgentRunner runner = new AgentRunnerService(workspace);
 ```
 
 `AgentRunnerService` сам прочитает `agent-runner.properties`, определит CLI и соберёт для него команду. Если нужен явный скил:
@@ -25,6 +27,8 @@ System.out.println(result.getFinalResult());
 ```java
 runner.executeSkill("review", "Проверь этот PR на баги");
 ```
+
+`workspace` — это просто рабочая директория (cwd), из которой запускается CLI; библиотека ничего не предполагает про её внутреннюю структуру. На каждый запуск генерируется свой `runId` (UUID), а лог пишется в `<buildDir>/agentic-cli-runner/<uuid>.json`, где `buildDir` определяется автоматически: `target` для Maven (`pom.xml` в cwd) и `build` для Gradle (`build.gradle[.kts]` в cwd).
 
 ## Конфигурация: agent-runner.properties
 
@@ -76,20 +80,20 @@ agent.cli.qwen.fallback.linux=${env.HOME}/.local/bin
 <dependency>
     <groupId>io.github.aarondeluna</groupId>
     <artifactId>agentic-cli-runner</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
 **Gradle** (Groovy DSL, `build.gradle`):
 
 ```groovy
-implementation 'io.github.aarondeluna:agentic-cli-runner:1.0.0'
+implementation 'io.github.aarondeluna:agentic-cli-runner:1.1.0'
 ```
 
 **Gradle** (Kotlin DSL, `build.gradle.kts`):
 
 ```kotlin
-implementation("io.github.aarondeluna:agentic-cli-runner:1.0.0")
+implementation("io.github.aarondeluna:agentic-cli-runner:1.1.0")
 ```
 
 Убедитесь, что в сборке подключён репозиторий `mavenCentral()` (Maven Central подключён по умолчанию).

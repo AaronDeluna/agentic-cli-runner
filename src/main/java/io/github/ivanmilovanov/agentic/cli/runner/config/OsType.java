@@ -6,7 +6,11 @@ package io.github.ivanmilovanov.agentic.cli.runner.config;
 public enum OsType {
     WINDOWS, MAC, LINUX, OTHER;
 
-    /** Определяет тип ОС по системному свойству {@code os.name}. */
+    /**
+     * Определяет тип ОС по системному свойству {@code os.name}.
+     *
+     * @return тип текущей ОС
+     */
     public static OsType detect() {
         String os = System.getProperty("os.name").toLowerCase();
         if (os.contains("win")) return WINDOWS;

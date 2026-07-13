@@ -13,7 +13,7 @@ class StreamJsonLineFormatterTests {
         String out = formatter.format(
                 "{\"type\":\"system\",\"subtype\":\"init\",\"model\":\"claude-opus\",\"cwd\":\"/tmp\"}");
 
-        assertThat(out).contains("старт сессии", "model=claude-opus", "cwd=/tmp");
+        assertThat(out).contains("[START]", "model=claude-opus", "cwd=/tmp");
     }
 
     @Test
@@ -21,7 +21,7 @@ class StreamJsonLineFormatterTests {
         String out = formatter.format(
                 "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"Разбираюсь\"}]}}");
 
-        assertThat(out).isEqualTo("🤖 Разбираюсь");
+        assertThat(out).isEqualTo("[ASSISTANT] Разбираюсь");
     }
 
     @Test
@@ -30,7 +30,7 @@ class StreamJsonLineFormatterTests {
                 "{\"type\":\"assistant\",\"message\":{\"content\":"
                         + "[{\"type\":\"tool_use\",\"name\":\"Bash\",\"input\":{\"command\":\"ls\"}}]}}");
 
-        assertThat(out).startsWith("🔧 Bash(").contains("ls");
+        assertThat(out).startsWith("[TOOL] Bash(").contains("ls");
     }
 
     @Test
@@ -38,7 +38,7 @@ class StreamJsonLineFormatterTests {
         String out = formatter.format(
                 "{\"type\":\"result\",\"subtype\":\"success\",\"duration_ms\":1200,\"total_cost_usd\":0.01}");
 
-        assertThat(out).contains("готово", "success", "1200 мс", "$0.01");
+        assertThat(out).contains("[DONE]", "success", "1200 мс", "$0.01");
     }
 
     @Test
@@ -61,6 +61,6 @@ class StreamJsonLineFormatterTests {
         String out = formatter.format(
                 "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"" + longText + "\"}]}}");
 
-        assertThat(out).isEqualTo("🤖 " + longText).doesNotContain("… (+");
+        assertThat(out).isEqualTo("[ASSISTANT] " + longText).doesNotContain("... (+");
     }
 }
