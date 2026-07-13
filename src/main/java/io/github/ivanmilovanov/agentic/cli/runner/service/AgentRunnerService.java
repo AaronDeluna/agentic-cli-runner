@@ -15,9 +15,17 @@ public class AgentRunnerService implements AgentRunner {
     private final AgentRunner agentRunner;
 
     /**
+     * Запускает агента прямо в текущей рабочей директории (cwd) — когда отдельная
+     * рабочая область не нужна: {@code new AgentRunnerService().execute(prompt)}.
+     */
+    public AgentRunnerService() {
+        this(Path.of("").toAbsolutePath());
+    }
+
+    /**
      * Запускает агента в указанной рабочей области (workspace).
      * Внутри workspace может находиться директория {@code .qwen/} со скилами.
-     *
+     *А
      * @param workspace путь к рабочей области
      */
     public AgentRunnerService(Path workspace) {

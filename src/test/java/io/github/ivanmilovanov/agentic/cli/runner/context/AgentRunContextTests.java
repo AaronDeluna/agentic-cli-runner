@@ -39,7 +39,7 @@ class AgentRunContextTests {
         AgentRunContext context = new AgentRunContext(workspace);
 
         Path logFile = context.getLogFile();
-        // Тесты SDK гоняются Maven-ом, cwd содержит pom.xml → buildDir = target.
+        // Тесты SDK гоняются Maven-ом, cwd содержит pom.xml -> buildDir = target.
         assertThat(logFile.getFileName().toString()).isEqualTo(context.getRunId() + ".json");
         assertThat(logFile.getParent().getFileName().toString()).isEqualTo("agentic-cli-runner");
         assertThat(logFile.getParent().getParent().getFileName().toString()).isEqualTo("target");
