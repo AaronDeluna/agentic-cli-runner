@@ -26,6 +26,8 @@ System.out.println(result.getFinalResult());
 runner.executeSkill("review", "Проверь этот PR на баги");
 ```
 
+`workspace` — это просто рабочая директория (cwd), из которой запускается CLI; библиотека ничего не предполагает про её внутреннюю структуру. На каждый запуск генерируется свой `runId` (UUID), а лог пишется в `<buildDir>/agentic-cli-runner/<uuid>.json`, где `buildDir` определяется автоматически: `target` для Maven (`pom.xml` в cwd) и `build` для Gradle (`build.gradle[.kts]` в cwd).
+
 ## Конфигурация: agent-runner.properties
 
 Всё, что нужно для запуска CLI, задаётся в конфиге по неймспейсу `agent.cli.<name>.*` —
@@ -76,20 +78,20 @@ agent.cli.qwen.fallback.linux=${env.HOME}/.local/bin
 <dependency>
     <groupId>io.github.aarondeluna</groupId>
     <artifactId>agentic-cli-runner</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 
 **Gradle** (Groovy DSL, `build.gradle`):
 
 ```groovy
-implementation 'io.github.aarondeluna:agentic-cli-runner:1.0.0'
+implementation 'io.github.aarondeluna:agentic-cli-runner:1.0.1'
 ```
 
 **Gradle** (Kotlin DSL, `build.gradle.kts`):
 
 ```kotlin
-implementation("io.github.aarondeluna:agentic-cli-runner:1.0.0")
+implementation("io.github.aarondeluna:agentic-cli-runner:1.0.1")
 ```
 
 Убедитесь, что в сборке подключён репозиторий `mavenCentral()` (Maven Central подключён по умолчанию).

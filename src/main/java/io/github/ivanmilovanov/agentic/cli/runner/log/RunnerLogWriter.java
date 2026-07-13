@@ -11,12 +11,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Записывает результат запуска агента в файл {@code log.json} внутри директории логов запуска.
+ * Записывает результат запуска агента в файл {@code <buildDir>/agentic-cli-runner/<uuid>.json}.
  */
 @Slf4j
 public class RunnerLogWriter {
-
-    private static final String LOG_FILE = "log.json";
 
     private final ObjectMapper objectMapper = new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT);
@@ -24,8 +22,8 @@ public class RunnerLogWriter {
     /** Сохраняет запись лога; ошибки записи логируются, но не пробрасываются вызывающему коду. */
     public void write(AgentRunContext context, AgentRunLogDto entry) {
         try {
-            Files.createDirectories(context.getRunDir());
-            Path logPath = context.getRunDir().resolve(LOG_FILE);
+            Path logPath = context.getLogFile();
+            Files.createDirectories(logPath.getParent());
             objectMapper.writeValue(logPath.toFile(), entry);
             log.info("Лог запуска агента сохранён: {}", logPath);
         } catch (IOException e) {
