@@ -15,7 +15,6 @@ import io.github.ivanmilovanov.agentic.cli.runner.parser.AgentStreamJsonParser;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -72,7 +71,6 @@ public class AgentRunnerImpl implements AgentRunner {
 
     private AgentResultDto run(String skillName, String prompt) throws Exception {
         log.info("[USER_QUERY]: {}", prompt);
-        Files.createDirectories(agentRunContext.getRunDir());
 
         List<String> command = commandFactory.buildCommand(prompt);
 
