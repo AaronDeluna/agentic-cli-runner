@@ -3,13 +3,24 @@ package io.github.ivanmilovanov.agentic.cli.runner.api;
 import io.github.ivanmilovanov.agentic.cli.runner.model.AgentResultDto;
 
 /**
- * Запускает агентский CLI (например, Qwen) с промптом пользователя или именованным скилом.
+ * Запуск агентского CLI с произвольным промптом или с именованным скилом.
  */
 public interface AgentRunner {
 
-    /** Запускает агента с произвольным пользовательским промптом. */
+    /**
+     * Выполняет промпт.
+     *
+     * @param prompt текст запроса
+     * @return результат запуска: вывод, код возврата, разобранные события
+     */
     AgentResultDto execute(String prompt) throws Exception;
 
-    /** Запускает агента с указанным скилом и промптом для него. */
+    /**
+     * Выполняет скил с переданным промптом.
+     *
+     * @param skillName имя скила
+     * @param prompt    текст запроса для скила
+     * @return результат запуска: вывод, код возврата, разобранные события
+     */
     AgentResultDto executeSkill(String skillName, String prompt) throws Exception;
 }

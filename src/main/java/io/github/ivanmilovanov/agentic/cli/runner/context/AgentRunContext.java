@@ -31,17 +31,23 @@ public class AgentRunContext {
         this.logFile = detectBuildDirectory().resolve(LOG_DIR).resolve(runId + ".json");
     }
 
-    /** Идентификатор запуска (UUID). */
+    /**
+     * @return идентификатор запуска (UUID)
+     */
     public String getRunId() {
         return runId;
     }
 
-    /** Рабочая директория запуска (cwd), из которой стартует CLI. */
+    /**
+     * @return рабочая директория (cwd), из которой стартует CLI
+     */
     public Path getWorkspace() {
         return workspace;
     }
 
-    /** Файл лога этого запуска: {@code <buildDir>/agentic-cli-runner/<uuid>.json}. */
+    /**
+     * @return файл лога запуска: {@code <buildDir>/agentic-cli-runner/<uuid>.json}
+     */
     public Path getLogFile() {
         return logFile;
     }

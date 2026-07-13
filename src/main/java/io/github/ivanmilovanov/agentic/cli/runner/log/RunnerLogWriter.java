@@ -19,7 +19,12 @@ public class RunnerLogWriter {
     private final ObjectMapper objectMapper = new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT);
 
-    /** Сохраняет запись лога; ошибки записи логируются, но не пробрасываются вызывающему коду. */
+    /**
+     * Сохраняет запись лога. Ошибки записи логируются и не пробрасываются вызывающему коду.
+     *
+     * @param context контекст запуска (определяет путь файла лога)
+     * @param entry   запись лога
+     */
     public void write(AgentRunContext context, AgentRunLogDto entry) {
         try {
             Path logPath = context.getLogFile();

@@ -19,7 +19,9 @@ public class AgentResultDto {
     private final String eventsJson;
     private final String finalResult;
 
-    /** Создаёт результат без событий (для случаев без разбора stream-json). */
+    /**
+     * Создаёт результат без разобранных событий stream-json.
+     */
     public AgentResultDto(String stdout, String stderr, int exitCode, boolean timedOut) {
         this(stdout, stderr, exitCode, timedOut, List.of(), "[]", null);
     }
