@@ -4,12 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Превращает одну строку stream-json вывода CLI-агента в короткую человекочитаемую строку
- * для живого лога («процесс работы агента» в рантайме).
+ * Форматирование строки stream-json в короткую читаемую строку для живого лога.
  * <p>
- * Если строка не является распознанным событием (или вообще не JSON), возвращается исходная
- * строка без изменений — чтобы ничего не потерять.
- * </p>
+ * Нераспознанная строка (не событие или не JSON) возвращается без изменений.
  */
 public class StreamJsonLineFormatter {
 
@@ -23,7 +20,12 @@ public class StreamJsonLineFormatter {
         this.objectMapper = objectMapper;
     }
 
-    /** Форматирует одну строку stream-json; при неудаче возвращает исходную строку. */
+    /**
+     * Форматирует строку stream-json; при неудаче разбора возвращает исходную строку.
+     *
+     * @param line строка вывода CLI
+     * @return читаемая строка для живого лога
+     */
     public String format(String line) {
         if (line == null || line.isBlank()) {
             return line;

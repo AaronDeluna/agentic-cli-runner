@@ -27,7 +27,9 @@ import java.util.List;
 @Slf4j
 public class AgentRunnerImpl implements AgentRunner {
 
-    /** Таймаут выполнения по умолчанию, если явно не задан другой. */
+    /**
+     * Таймаут выполнения по умолчанию.
+     */
     public static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(3);
 
     private final CommandExecutor commandExecutor;

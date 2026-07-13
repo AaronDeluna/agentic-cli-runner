@@ -35,7 +35,12 @@ public class AgentRunnerFactory {
     private final Duration timeout;
     private final RunnerLogWriter runnerLogWriter;
 
-    /** Создаёт фабрику с настройками по умолчанию (Apache-исполнитель, стандартный таймаут). */
+    /**
+     * Создаёт фабрику с реализациями по умолчанию: исполнитель на Apache Commons Exec,
+     * стандартный таймаут, запись лога запуска на диск.
+     *
+     * @param workspace рабочая директория запуска CLI
+     */
     public static AgentRunnerFactory defaultFactory(Path workspace) {
         return new AgentRunnerFactory(
                 new ApacheCommandExecutor(new StreamJsonLineFormatter()::format),
