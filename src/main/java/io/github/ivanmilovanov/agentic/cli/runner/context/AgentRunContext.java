@@ -46,7 +46,7 @@ public class AgentRunContext {
         return logFile;
     }
 
-    // build-каталог по cwd JVM: pom.xml → target, build.gradle[.kts] → build, иначе target.
+    // build-каталог по cwd JVM: pom.xml -> target, build.gradle[.kts] -> build, иначе target.
     private static Path detectBuildDirectory() {
         Path cwd = Path.of("").toAbsolutePath();
         if (Files.isRegularFile(cwd.resolve("pom.xml"))) {

@@ -41,8 +41,8 @@ public class StreamJsonLineFormatter {
         String type = event.path("type").asText("");
         return switch (type) {
             case "system" -> formatSystem(event);
-            case "assistant" -> formatMessage(event, "🤖");
-            case "user" -> formatMessage(event, "↳");
+            case "assistant" -> formatMessage(event, "[ASSISTANT]");
+            case "user" -> formatMessage(event, "[USER]");
             case "result" -> formatResult(event);
             default -> line;
         };
@@ -52,31 +52,31 @@ public class StreamJsonLineFormatter {
         if ("init".equals(event.path("subtype").asText())) {
             String model = event.path("model").asText("");
             String cwd = event.path("cwd").asText("");
-            StringBuilder sb = new StringBuilder("▶ старт сессии");
+            StringBuilder sb = new StringBuilder("[START] сессия");
             if (!model.isEmpty()) {
-                sb.append(" · model=").append(model);
+                sb.append(" | model=").append(model);
             }
             if (!cwd.isEmpty()) {
-                sb.append(" · cwd=").append(cwd);
+                sb.append(" | cwd=").append(cwd);
             }
             return sb.toString();
         }
-        return "▶ " + event.path("subtype").asText("system");
+        return "[SYSTEM] " + event.path("subtype").asText("system");
     }
 
-    private String formatMessage(JsonNode event, String icon) {
+    private String formatMessage(JsonNode event, String tag) {
         JsonNode content = event.path("message").path("content");
         if (!content.isArray() || content.isEmpty()) {
-            return icon + " …";
+            return tag + " ...";
         }
         StringBuilder sb = new StringBuilder();
         for (JsonNode part : content) {
-            String part_type = part.path("type").asText("");
-            String rendered = switch (part_type) {
-                case "text" -> icon + " " + clean(part.path("text").asText().strip());
-                case "thinking" -> "💭 " + clean(part.path("thinking").asText().strip());
-                case "tool_use" -> "🔧 " + part.path("name").asText("tool") + "(" + shortInput(part.path("input")) + ")";
-                case "tool_result" -> icon + " результат: " + clean(toolResultText(part));
+            String partType = part.path("type").asText("");
+            String rendered = switch (partType) {
+                case "text" -> tag + " " + clean(part.path("text").asText().strip());
+                case "thinking" -> "[THINK] " + clean(part.path("thinking").asText().strip());
+                case "tool_use" -> "[TOOL] " + part.path("name").asText("tool") + "(" + shortInput(part.path("input")) + ")";
+                case "tool_result" -> tag + " результат: " + clean(toolResultText(part));
                 default -> "";
             };
             if (!rendered.isBlank()) {
@@ -86,19 +86,19 @@ public class StreamJsonLineFormatter {
                 sb.append(rendered);
             }
         }
-        return sb.length() > 0 ? sb.toString() : icon + " …";
+        return sb.length() > 0 ? sb.toString() : tag + " ...";
     }
 
     private String formatResult(JsonNode event) {
-        StringBuilder sb = new StringBuilder("✅ готово");
+        StringBuilder sb = new StringBuilder("[DONE]");
         if (event.hasNonNull("subtype")) {
             sb.append(" (").append(event.path("subtype").asText()).append(")");
         }
         if (event.hasNonNull("duration_ms")) {
-            sb.append(" · ").append(event.path("duration_ms").asLong()).append(" мс");
+            sb.append(" | ").append(event.path("duration_ms").asLong()).append(" мс");
         }
         if (event.hasNonNull("total_cost_usd")) {
-            sb.append(" · $").append(event.path("total_cost_usd").asText());
+            sb.append(" | $").append(event.path("total_cost_usd").asText());
         }
         return sb.toString();
     }

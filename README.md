@@ -13,11 +13,13 @@ Java-библиотека для запуска агентских CLI из ва
 ## Quick Start
 
 ```java
-Path workspace = Path.of("/path/to/workspace"); // здесь может лежать .qwen/ со скилами
-AgentRunner runner = new AgentRunnerService(workspace);
-
-AgentResultDto result = runner.execute("Объясни, что делает этот код");
+// Самый короткий вариант — запуск прямо в текущей директории (cwd):
+AgentResultDto result = new AgentRunnerService().execute("Объясни, что делает этот код");
 System.out.println(result.getFinalResult());
+
+// Либо с явной рабочей областью (в ней может лежать .qwen/ со скилами):
+Path workspace = Path.of("/path/to/workspace");
+AgentRunner runner = new AgentRunnerService(workspace);
 ```
 
 `AgentRunnerService` сам прочитает `agent-runner.properties`, определит CLI и соберёт для него команду. Если нужен явный скил:
@@ -78,20 +80,20 @@ agent.cli.qwen.fallback.linux=${env.HOME}/.local/bin
 <dependency>
     <groupId>io.github.aarondeluna</groupId>
     <artifactId>agentic-cli-runner</artifactId>
-    <version>1.0.1</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
 **Gradle** (Groovy DSL, `build.gradle`):
 
 ```groovy
-implementation 'io.github.aarondeluna:agentic-cli-runner:1.0.1'
+implementation 'io.github.aarondeluna:agentic-cli-runner:1.1.0'
 ```
 
 **Gradle** (Kotlin DSL, `build.gradle.kts`):
 
 ```kotlin
-implementation("io.github.aarondeluna:agentic-cli-runner:1.0.1")
+implementation("io.github.aarondeluna:agentic-cli-runner:1.1.0")
 ```
 
 Убедитесь, что в сборке подключён репозиторий `mavenCentral()` (Maven Central подключён по умолчанию).
