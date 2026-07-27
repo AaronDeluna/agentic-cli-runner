@@ -42,6 +42,9 @@ agent.cli.qwen.args=--output-format,stream-json,--approval-mode,yolo
 agent.cli.qwen.prefix.windows=cmd,/c
 agent.cli.qwen.fallback.mac=${env.HOME}/.local/bin
 agent.cli.qwen.fallback.linux=${env.HOME}/.local/bin
+
+# Таймаут выполнения агента в минутах (необязательно; по умолчанию 15).
+agent.timeout=15
 ```
 
 Что означают ключи:
@@ -52,6 +55,7 @@ agent.cli.qwen.fallback.linux=${env.HOME}/.local/bin
 | `agent.cli.<name>.args` | Обязательные аргументы запуска, через запятую (`prompt` добавляется автоматически в конце) |
 | `agent.cli.<name>.fallback.<os>` | Запасные пути поиска бинаря для ОС (`mac`/`linux`/`windows`), через `;` |
 | `agent.cli.<name>.prefix.windows` | Префикс команды для Windows (например, `cmd,/c`) |
+| `agent.timeout` | Таймаут выполнения агента в минутах (необязательно). Если не задан — 15 минут. |
 
 Пути и значения поддерживают подстановку переменных: `${env.HOME}`, `${user.home}`, `$HOME`, `$USERPROFILE`.
 
