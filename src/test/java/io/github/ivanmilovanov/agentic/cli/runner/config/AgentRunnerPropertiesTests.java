@@ -1,12 +1,15 @@
 package io.github.ivanmilovanov.agentic.cli.runner.config;
 
+import io.github.ivanmilovanov.agentic.cli.runner.exception.AgentRunnerConfigurationException;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class AgentRunnerPropertiesTests {
 
@@ -61,5 +64,39 @@ class AgentRunnerPropertiesTests {
 
         assertThat(AgentRunnerProperties.getPrefix(properties, "qwen", OsType.WINDOWS)).containsExactly("cmd", "/c");
         assertThat(AgentRunnerProperties.getPrefix(properties, "qwen", OsType.MAC)).isEmpty();
+    }
+
+    @Test
+    void getTimeoutReturnsDefaultWhenPropertyMissing() {
+        Duration fallback = Duration.ofMinutes(15);
+
+        assertThat(AgentRunnerProperties.getTimeout(new Properties(), fallback)).isEqualTo(fallback);
+    }
+
+    @Test
+    void getTimeoutFromPropertyOverridesDefault() {
+        Properties properties = new Properties();
+        properties.setProperty("agent.timeout", "30");
+
+        assertThat(AgentRunnerProperties.getTimeout(properties, Duration.ofMinutes(15)))
+                .isEqualTo(Duration.ofMinutes(30));
+    }
+
+    @Test
+    void getTimeoutRejectsNonNumericValue() {
+        Properties properties = new Properties();
+        properties.setProperty("agent.timeout", "abc");
+
+        assertThatThrownBy(() -> AgentRunnerProperties.getTimeout(properties, Duration.ofMinutes(15)))
+                .isInstanceOf(AgentRunnerConfigurationException.class);
+    }
+
+    @Test
+    void getTimeoutRejectsNonPositiveValue() {
+        Properties properties = new Properties();
+        properties.setProperty("agent.timeout", "0");
+
+        assertThatThrownBy(() -> AgentRunnerProperties.getTimeout(properties, Duration.ofMinutes(15)))
+                .isInstanceOf(AgentRunnerConfigurationException.class);
     }
 }

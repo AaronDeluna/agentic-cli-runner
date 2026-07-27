@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -24,6 +25,9 @@ public final class AgentRunnerProperties {
 
     public static final String DEFAULT_PROPERTIES_FILE = "agent-runner.properties";
     public static final String CLI_PROPERTY = "agent.cli";
+
+    // Таймаут выполнения агента в минутах (общий для раннера, не привязан к CLI).
+    public static final String TIMEOUT_PROPERTY = "agent.timeout";
 
     // Значение agent.cli — имя активного CLI (оно же имя его исполняемого файла).
     // Все настройки к нему берутся из конфига по неймспейсу agent.cli.<name>.*:
@@ -143,6 +147,36 @@ public final class AgentRunnerProperties {
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Возвращает таймаут выполнения агента из настроек.
+     * Ключ: {@code agent.timeout} — целое число минут. Если не задан или пуст — {@code defaultTimeout}.
+     *
+     * @param props          настройки
+     * @param defaultTimeout значение по умолчанию, если {@code agent.timeout} не задан
+     * @return таймаут выполнения
+     * @throws AgentRunnerConfigurationException если значение задано, но не является положительным числом минут
+     */
+    public static Duration getTimeout(Properties props, Duration defaultTimeout) {
+        String value = props.getProperty(TIMEOUT_PROPERTY);
+        if (value == null || value.isBlank()) {
+            return defaultTimeout;
+        }
+        long minutes;
+        try {
+            minutes = Long.parseLong(value.trim());
+        } catch (NumberFormatException e) {
+            throw new AgentRunnerConfigurationException(
+                    "Некорректное значение '" + TIMEOUT_PROPERTY + "' (ожидается число минут): " + value, e
+            );
+        }
+        if (minutes <= 0) {
+            throw new AgentRunnerConfigurationException(
+                    "'" + TIMEOUT_PROPERTY + "' должен быть положительным числом минут: " + value
+            );
+        }
+        return Duration.ofMinutes(minutes);
     }
 
     /**
