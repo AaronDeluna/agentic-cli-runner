@@ -28,9 +28,10 @@ import java.util.List;
 public class AgentRunnerImpl implements AgentRunner {
 
     /**
-     * Таймаут выполнения по умолчанию.
+     * Таймаут выполнения по умолчанию, если явно не задан другой.
+     * Переопределяется свойством {@code agent.timeout} (в минутах) в {@code agent-runner.properties}.
      */
-    public static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(3);
+    public static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(15);
 
     private final CommandExecutor commandExecutor;
     private final AgentStreamJsonParser agentStreamJsonParser;

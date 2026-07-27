@@ -73,12 +73,16 @@ public class AgentRunnerFactory {
     public AgentRunner create(Properties properties) {
         log.info("Запуск через CLI: {}", AgentRunnerProperties.getCliName(properties));
 
+        // Таймаут из проперти (agent.timeout, в минутах) переопределяет таймаут фабрики.
+        Duration effectiveTimeout = AgentRunnerProperties.getTimeout(properties, timeout);
+        log.info("Таймаут выполнения: {} мин", effectiveTimeout.toMinutes());
+
         return new AgentRunnerImpl(
                 commandExecutor,
                 agentStreamJsonParser,
                 runnerLogWriter,
                 workingDirectory,
-                timeout,
+                effectiveTimeout,
                 createCommandFactory(properties)
         );
     }

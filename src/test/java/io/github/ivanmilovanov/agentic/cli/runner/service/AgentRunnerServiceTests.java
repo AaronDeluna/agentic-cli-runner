@@ -2,6 +2,7 @@ package io.github.ivanmilovanov.agentic.cli.runner.service;
 
 import io.github.ivanmilovanov.agentic.cli.runner.api.AgentRunner;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
 
@@ -18,7 +19,7 @@ class AgentRunnerServiceTests {
     }
 
     @Test
-    void explicitWorkspaceConstructorBuildsService(@org.junit.jupiter.api.io.TempDir Path workspace) {
+    void explicitWorkspaceConstructorBuildsService(@TempDir Path workspace) {
         AgentRunner runner = new AgentRunnerService(workspace);
 
         assertThat(runner).isInstanceOf(AgentRunner.class);
