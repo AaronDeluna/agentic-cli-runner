@@ -2,6 +2,37 @@
 
 Все значимые изменения проекта фиксируются здесь.
 
+## [1.3.0] — 2026-08-21
+
+### Добавлено
+- Режим песочницы (`agent.sandbox=true`, по умолчанию `false`). Перед запуском библиотека
+  копирует проект во временную директорию, стартует агента в этой копии, а после завершения
+  (в т.ч. при ошибке/таймауте) удаляет её. Реальный проект не изменяется — агент работает
+  с копией, наружу писать не может, читать может всё.
+- Два слоя изоляции:
+  - копия проекта + временная рабочая директория (всегда);
+  - жёсткий запрет записи средствами ОС (`agent.sandbox.os-enforcement=true`, по умолчанию
+    включён): macOS — `sandbox-exec`, Linux — `bwrap`/`firejail`. Если инструмент недоступен
+    или ОС не поддерживается (Windows) — слой отключается с предупреждением, остаётся изоляция
+    через копию.
+- Каталог конфига активного CLI (`.<agent.cli>`, например `.qwen`) всегда попадает в корень
+  копии и никогда не исключается из копирования. Изменения агента внутри него тоже отражаются
+  в `fileChanges`.
+- Настраиваемый список исключений копирования `agent.sandbox.exclude` (через запятую).
+  По умолчанию: `.git,.idea,node_modules,target,build,dist,.gradle`.
+- Изменения файлов агентом попадают прямо в лог запуска — поле `fileChanges` в
+  `<buildDir>/agentic-cli-runner/<runId>.json`: массив объектов
+  `{path, changeType (added|modified|deleted), diff}` (diff в unified-формате). Отдельный
+  `.diff`-файл больше не создаётся — весь результат работы агента в одном JSON, удобно
+  отдавать на анализ. Для запусков без песочницы поля нет.
+- Те же изменения доступны программно: `AgentResultDto.getFileChanges()` возвращает
+  `List<FileChangeDto>` (без песочницы — пустой список).
+- Новые классы: `sandbox.Sandbox`, `sandbox.NoopSandbox`, `sandbox.CopyingSandbox`,
+  `sandbox.ProjectCopier`, `sandbox.OsSandboxCommandWrapper`, `sandbox.SandboxDiff`,
+  `model.FileChangeDto`. Методы `AgentRunnerProperties.isSandbox/isSandboxOsEnforcement/getSandboxExcludes`
+  и фабричный `AgentRunnerFactory.createSandbox(...)`. Новое поле `fileChanges` в
+  `AgentRunLogDto` и `AgentResultDto`.
+
 ## [1.2.0] — 2026-07-27
 
 ### Добавлено

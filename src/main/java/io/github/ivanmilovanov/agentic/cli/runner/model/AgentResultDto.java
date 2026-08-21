@@ -20,10 +20,16 @@ public class AgentResultDto {
     private final String finalResult;
 
     /**
+     * Изменения файлов агентом (если {@code agent.sandbox=true}); иначе пустой список.
+     * Дублирует поле {@code fileChanges} лога запуска — для удобного программного доступа.
+     */
+    private final List<FileChangeDto> fileChanges;
+
+    /**
      * Создаёт результат без разобранных событий stream-json.
      */
     public AgentResultDto(String stdout, String stderr, int exitCode, boolean timedOut) {
-        this(stdout, stderr, exitCode, timedOut, List.of(), "[]", null);
+        this(stdout, stderr, exitCode, timedOut, List.of(), "[]", null, List.of());
     }
 
     public AgentResultDto(
@@ -33,7 +39,8 @@ public class AgentResultDto {
             boolean timedOut,
             List<JsonNode> events,
             String eventsJson,
-            String finalResult
+            String finalResult,
+            List<FileChangeDto> fileChanges
     ) {
         this.stdout = stdout;
         this.stderr = stderr;
@@ -42,5 +49,6 @@ public class AgentResultDto {
         this.events = events;
         this.eventsJson = eventsJson;
         this.finalResult = finalResult;
+        this.fileChanges = fileChanges == null ? List.of() : fileChanges;
     }
 }

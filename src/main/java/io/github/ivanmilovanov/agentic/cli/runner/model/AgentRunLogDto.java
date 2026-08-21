@@ -22,4 +22,10 @@ public class AgentRunLogDto {
     private final String skillName;
     private final String finalResult;
     private final List<JsonNode> events;
+
+    /**
+     * Изменения файлов, сделанные агентом в песочнице (если {@code agent.sandbox=true}).
+     * Для запусков без песочницы поле отсутствует.
+     */
+    private final List<FileChangeDto> fileChanges;
 }

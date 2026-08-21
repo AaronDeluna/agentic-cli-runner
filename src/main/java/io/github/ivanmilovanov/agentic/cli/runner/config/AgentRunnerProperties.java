@@ -29,6 +29,21 @@ public final class AgentRunnerProperties {
     // Таймаут выполнения агента в минутах (общий для раннера, не привязан к CLI).
     public static final String TIMEOUT_PROPERTY = "agent.timeout";
 
+    // Песочница: агент работает во временной копии проекта, наружу писать нельзя.
+    //   agent.sandbox                 — вкл/выкл (true/false, по умолчанию false)
+    //   agent.sandbox.os-enforcement  — жёсткий запрет записи на уровне ОС (по умолчанию true)
+    //   agent.sandbox.exclude         — что не копировать во временную папку (через запятую)
+    public static final String SANDBOX_PROPERTY = "agent.sandbox";
+    public static final String SANDBOX_OS_ENFORCEMENT_PROPERTY = "agent.sandbox.os-enforcement";
+    public static final String SANDBOX_EXCLUDE_PROPERTY = "agent.sandbox.exclude";
+
+    /**
+     * Каталоги, которые по умолчанию не копируются в песочницу (мусор/история/сборка).
+     * Каталог конфига CLI ({@code .<agent.cli>}) в исключения не входит и никогда не выкидывается.
+     */
+    public static final List<String> DEFAULT_SANDBOX_EXCLUDES =
+            List.of(".git", ".idea", "node_modules", "target", "build", "dist", ".gradle");
+
     // Значение agent.cli — имя активного CLI (оно же имя его исполняемого файла).
     // Все настройки к нему берутся из конфига по неймспейсу agent.cli.<name>.*:
     //   agent.cli.<name>.args           — обязательные аргументы запуска (через запятую)
@@ -177,6 +192,44 @@ public final class AgentRunnerProperties {
             );
         }
         return Duration.ofMinutes(minutes);
+    }
+
+    /**
+     * Включена ли песочница. Ключ: {@code agent.sandbox} (по умолчанию {@code false}).
+     *
+     * @return {@code true}, если агента нужно запускать во временной копии проекта
+     */
+    public static boolean isSandbox(Properties props) {
+        return Boolean.parseBoolean(props.getProperty(SANDBOX_PROPERTY, "false").trim());
+    }
+
+    /**
+     * Нужно ли поверх копии включать жёсткий запрет записи средствами ОС.
+     * Ключ: {@code agent.sandbox.os-enforcement} (по умолчанию {@code true}).
+     * На ОС без поддержки (Windows/прочее) слой автоматически отключается с предупреждением.
+     *
+     * @return {@code true}, если требуется ОС-изоляция записи
+     */
+    public static boolean isSandboxOsEnforcement(Properties props) {
+        return Boolean.parseBoolean(props.getProperty(SANDBOX_OS_ENFORCEMENT_PROPERTY, "true").trim());
+    }
+
+    /**
+     * Возвращает имена каталогов, которые не копируются в песочницу.
+     * Ключ: {@code agent.sandbox.exclude} (через запятую). Если ключ не задан —
+     * {@link #DEFAULT_SANDBOX_EXCLUDES}; если задан пустым — исключений нет.
+     *
+     * @return список имён каталогов-исключений
+     */
+    public static List<String> getSandboxExcludes(Properties props) {
+        String value = props.getProperty(SANDBOX_EXCLUDE_PROPERTY);
+        if (value == null) {
+            return DEFAULT_SANDBOX_EXCLUDES;
+        }
+        return Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
     }
 
     /**
