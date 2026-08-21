@@ -12,6 +12,9 @@ import io.github.ivanmilovanov.agentic.cli.runner.log.RunnerLogWriter;
 import io.github.ivanmilovanov.agentic.cli.runner.parser.AgentStreamJsonParser;
 import io.github.ivanmilovanov.agentic.cli.runner.parser.StreamJsonLineFormatter;
 import io.github.ivanmilovanov.agentic.cli.runner.runner.AgentRunnerImpl;
+import io.github.ivanmilovanov.agentic.cli.runner.sandbox.CopyingSandbox;
+import io.github.ivanmilovanov.agentic.cli.runner.sandbox.NoopSandbox;
+import io.github.ivanmilovanov.agentic.cli.runner.sandbox.Sandbox;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.file.Path;
@@ -83,8 +86,24 @@ public class AgentRunnerFactory {
                 runnerLogWriter,
                 workingDirectory,
                 effectiveTimeout,
-                createCommandFactory(properties)
+                createCommandFactory(properties),
+                createSandbox(properties)
         );
+    }
+
+    /**
+     * Собирает песочницу из настроек: {@link NoopSandbox} при {@code agent.sandbox=false},
+     * иначе {@link CopyingSandbox} (копия проекта + опциональный ОС-запрет записи).
+     */
+    public static Sandbox createSandbox(Properties props) {
+        if (!AgentRunnerProperties.isSandbox(props)) {
+            return new NoopSandbox();
+        }
+        String cliName = AgentRunnerProperties.getCliName(props);
+        List<String> excludes = AgentRunnerProperties.getSandboxExcludes(props);
+        boolean osEnforcement = AgentRunnerProperties.isSandboxOsEnforcement(props);
+        log.info("Песочница включена: cli=.{}, os-enforcement={}, exclude={}", cliName, osEnforcement, excludes);
+        return new CopyingSandbox(cliName, excludes, osEnforcement, OsType.detect());
     }
 
     /**

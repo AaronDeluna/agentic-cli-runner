@@ -99,4 +99,53 @@ class AgentRunnerPropertiesTests {
         assertThatThrownBy(() -> AgentRunnerProperties.getTimeout(properties, Duration.ofMinutes(15)))
                 .isInstanceOf(AgentRunnerConfigurationException.class);
     }
+
+    @Test
+    void sandboxIsDisabledByDefault() {
+        assertThat(AgentRunnerProperties.isSandbox(new Properties())).isFalse();
+    }
+
+    @Test
+    void sandboxIsEnabledWhenPropertyTrue() {
+        Properties properties = new Properties();
+        properties.setProperty("agent.sandbox", "true");
+
+        assertThat(AgentRunnerProperties.isSandbox(properties)).isTrue();
+    }
+
+    @Test
+    void osEnforcementIsEnabledByDefault() {
+        assertThat(AgentRunnerProperties.isSandboxOsEnforcement(new Properties())).isTrue();
+    }
+
+    @Test
+    void osEnforcementCanBeDisabled() {
+        Properties properties = new Properties();
+        properties.setProperty("agent.sandbox.os-enforcement", "false");
+
+        assertThat(AgentRunnerProperties.isSandboxOsEnforcement(properties)).isFalse();
+    }
+
+    @Test
+    void sandboxExcludesFallBackToDefaultWhenPropertyMissing() {
+        assertThat(AgentRunnerProperties.getSandboxExcludes(new Properties()))
+                .isEqualTo(AgentRunnerProperties.DEFAULT_SANDBOX_EXCLUDES);
+    }
+
+    @Test
+    void sandboxExcludesParsedAsCommaSeparatedList() {
+        Properties properties = new Properties();
+        properties.setProperty("agent.sandbox.exclude", ".git, node_modules ,target");
+
+        assertThat(AgentRunnerProperties.getSandboxExcludes(properties))
+                .containsExactly(".git", "node_modules", "target");
+    }
+
+    @Test
+    void sandboxExcludesEmptyWhenPropertyBlank() {
+        Properties properties = new Properties();
+        properties.setProperty("agent.sandbox.exclude", "");
+
+        assertThat(AgentRunnerProperties.getSandboxExcludes(properties)).isEmpty();
+    }
 }

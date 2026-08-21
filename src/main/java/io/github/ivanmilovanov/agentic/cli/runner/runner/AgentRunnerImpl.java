@@ -11,7 +11,10 @@ import io.github.ivanmilovanov.agentic.cli.runner.model.AgentResultDto;
 import io.github.ivanmilovanov.agentic.cli.runner.model.AgentRunLogDto;
 import io.github.ivanmilovanov.agentic.cli.runner.model.CommandRequestDto;
 import io.github.ivanmilovanov.agentic.cli.runner.model.CommandResultDto;
+import io.github.ivanmilovanov.agentic.cli.runner.model.FileChangeDto;
 import io.github.ivanmilovanov.agentic.cli.runner.parser.AgentStreamJsonParser;
+import io.github.ivanmilovanov.agentic.cli.runner.sandbox.NoopSandbox;
+import io.github.ivanmilovanov.agentic.cli.runner.sandbox.Sandbox;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,9 +41,13 @@ public class AgentRunnerImpl implements AgentRunner {
     private final RunnerLogWriter runnerLogWriter;
     private final Duration timeout;
     private final CommandFactory commandFactory;
+    private final Sandbox sandbox;
     @Getter
     private final AgentRunContext agentRunContext;
 
+    /**
+     * Совместимый конструктор без песочницы — запуск прямо в рабочей директории.
+     */
     public AgentRunnerImpl(
             CommandExecutor commandExecutor,
             AgentStreamJsonParser agentStreamJsonParser,
@@ -49,12 +56,26 @@ public class AgentRunnerImpl implements AgentRunner {
             Duration timeout,
             CommandFactory commandFactory
     ) {
+        this(commandExecutor, agentStreamJsonParser, runnerLogWriter,
+                workingDirectory, timeout, commandFactory, new NoopSandbox());
+    }
+
+    public AgentRunnerImpl(
+            CommandExecutor commandExecutor,
+            AgentStreamJsonParser agentStreamJsonParser,
+            RunnerLogWriter runnerLogWriter,
+            Path workingDirectory,
+            Duration timeout,
+            CommandFactory commandFactory,
+            Sandbox sandbox
+    ) {
         this.commandExecutor = commandExecutor;
         this.agentStreamJsonParser = agentStreamJsonParser;
         this.runnerLogWriter = runnerLogWriter;
         this.agentRunContext = new AgentRunContext(workingDirectory);
         this.timeout = timeout;
         this.commandFactory = commandFactory;
+        this.sandbox = sandbox;
     }
 
     @Override
@@ -77,37 +98,52 @@ public class AgentRunnerImpl implements AgentRunner {
 
         List<String> command = commandFactory.buildCommand(prompt);
 
-        Instant startedAt = Instant.now();
-        CommandResultDto result = commandExecutor.execute(new CommandRequestDto(
-                command,
-                agentRunContext.getWorkspace(),
-                timeout
-        ));
-        Instant finishedAt = Instant.now();
+        // Песочница: prepare даёт рабочую директорию (для NoopSandbox — исходную,
+        // для CopyingSandbox — временную копию проекта). finish снимает diff и чистит копию.
+        Path runDir = sandbox.prepare(agentRunContext);
+        try {
+            List<String> effectiveCommand = sandbox.wrapCommand(command, runDir);
 
-        AgentLogDto agentLog = agentStreamJsonParser.parse(result.getStdout());
-        log.info("[AGENT_RESPONSE]: \n{}", agentLog.getEventsJson());
-        AgentResultDto agentResult = new AgentResultDto(
-                result.getStdout(),
-                result.getStderr(),
-                result.getExitCode(),
-                result.isTimedOut(),
-                agentLog.getEvents(),
-                agentLog.getEventsJson(),
-                agentLog.getFinalResult()
-        );
+            Instant startedAt = Instant.now();
+            CommandResultDto result = commandExecutor.execute(new CommandRequestDto(
+                    effectiveCommand,
+                    runDir,
+                    timeout
+            ));
+            Instant finishedAt = Instant.now();
 
-        AgentRunLogDto logEntry = AgentRunLogDto.builder()
-                .runId(agentRunContext.getRunId())
-                .startedAt(startedAt.toString())
-                .finishedAt(finishedAt.toString())
-                .skillName(skillName)
-                .finalResult(agentResult.getFinalResult())
-                .events(agentResult.getEvents())
-                .build();
-        runnerLogWriter.write(agentRunContext, logEntry);
+            AgentLogDto agentLog = agentStreamJsonParser.parse(result.getStdout());
+            log.info("[AGENT_RESPONSE]: \n{}", agentLog.getEventsJson());
 
-        return agentResult;
+            // Изменения файлов агентом (песочница) — снимаем до удаления копии.
+            List<FileChangeDto> fileChanges = sandbox.summarizeChanges(agentRunContext, runDir);
+
+            AgentResultDto agentResult = new AgentResultDto(
+                    result.getStdout(),
+                    result.getStderr(),
+                    result.getExitCode(),
+                    result.isTimedOut(),
+                    agentLog.getEvents(),
+                    agentLog.getEventsJson(),
+                    agentLog.getFinalResult(),
+                    fileChanges
+            );
+
+            AgentRunLogDto logEntry = AgentRunLogDto.builder()
+                    .runId(agentRunContext.getRunId())
+                    .startedAt(startedAt.toString())
+                    .finishedAt(finishedAt.toString())
+                    .skillName(skillName)
+                    .finalResult(agentResult.getFinalResult())
+                    .events(agentResult.getEvents())
+                    .fileChanges(fileChanges.isEmpty() ? null : fileChanges)
+                    .build();
+            runnerLogWriter.write(agentRunContext, logEntry);
+
+            return agentResult;
+        } finally {
+            sandbox.cleanup(runDir);
+        }
     }
 
     private static void validateSkillName(String skillName) {

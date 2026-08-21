@@ -13,6 +13,7 @@ import org.apache.commons.exec.PumpStreamHandler;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 /**
  * Реализация {@link CommandExecutor} на Apache Commons Exec: запуск процесса,
@@ -26,6 +27,11 @@ import java.util.function.UnaryOperator;
 public class ApacheCommandExecutor implements CommandExecutor {
 
     private final UnaryOperator<String> stdoutLineFormatter;
+
+    // Компактная строка команды для лога: длинные многострочные аргументы (например,
+    // seatbelt-профиль sandbox-exec) схлопываются в одну строку с усечением — на само
+    // выполнение это не влияет, только на читаемость лога.
+    private static final int MAX_LOGGED_ARG_LENGTH = 120;
 
     /**
      * Создаёт исполнитель без форматирования живого лога (stdout выводится как есть).
@@ -77,7 +83,7 @@ public class ApacheCommandExecutor implements CommandExecutor {
         }
 
         log.info("Executing command: {}, workingDirectory={}, timeout={}",
-                command,
+                compactCommand(commandParts),
                 request.getWorkingDirectory(),
                 request.getTimeout());
 
@@ -89,6 +95,23 @@ public class ApacheCommandExecutor implements CommandExecutor {
                 exitCode,
                 watchdog.killedProcess()
         );
+    }
+
+    private static String compactCommand(List<String> parts) {
+        return parts.stream()
+                .map(ApacheCommandExecutor::compactArg)
+                .collect(Collectors.joining(" "));
+    }
+
+    private static String compactArg(String arg) {
+        if (arg == null) {
+            return "";
+        }
+        String oneLine = arg.replace('\n', ' ').replace('\r', ' ');
+        if (oneLine.length() <= MAX_LOGGED_ARG_LENGTH) {
+            return oneLine;
+        }
+        return oneLine.substring(0, MAX_LOGGED_ARG_LENGTH) + "…(+" + (oneLine.length() - MAX_LOGGED_ARG_LENGTH) + " chars)";
     }
 
     // На каждую строку: дописывает её в accumulator (для разбора) и логирует через formatter.
