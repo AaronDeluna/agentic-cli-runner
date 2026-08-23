@@ -1,5 +1,13 @@
 # agentic-cli-runner
 
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.aarondeluna/agentic-cli-runner?logo=apachemaven&label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.aarondeluna/agentic-cli-runner)
+[![Java 17+](https://img.shields.io/badge/Java-17%2B-orange?logo=openjdk&logoColor=white)](https://adoptium.net/)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg?logo=apache)](https://www.apache.org/licenses/LICENSE-2.0)
+[![javadoc](https://javadoc.io/badge2/io.github.aarondeluna/agentic-cli-runner/javadoc.svg)](https://javadoc.io/doc/io.github.aarondeluna/agentic-cli-runner)
+[![GitHub stars](https://img.shields.io/github/stars/AaronDeluna/agentic-cli-runner?style=social)](https://github.com/AaronDeluna/agentic-cli-runner/stargazers)
+
+> **Run agentic AI coding CLIs (Qwen Code, Codex, Claude Code) straight from Java.** A tiny, dependency-light library that finds the CLI binary, builds the command, runs the process, parses its `stream-json` output and stores a run log — with an optional sandbox. No REST, no Spring.
+
 Java-библиотека для запуска агентских CLI из кода: находит исполняемый файл CLI, собирает команду, запускает процесс, разбирает stream-json вывод и сохраняет лог запуска на диск. Без внешних зависимостей от REST или Spring — только Java-классы для встраивания в CI, тесты или бэкенд.
 
 Библиотека не привязана к конкретному CLI и не хранит их флаги в коде: имя бинаря и аргументы запуска задаются в конфиге по неймспейсу `agent.cli.<name>.*`. Поддерживается любой stream-json-совместимый CLI (например, [Qwen Code](https://github.com/QwenLM/qwen-code) и его форки) без правок кода.
@@ -116,10 +124,10 @@ agent.sandbox=true
 - **Жёсткий запрет записи средствами ОС** (`agent.sandbox.os-enforcement=true`, по умолчанию
   включён) — процесс оборачивается в ОС-песочницу, которая физически блокирует запись за
   пределы временной папки:
-  - **macOS** — `sandbox-exec`;
-  - **Linux** — `bwrap` (bubblewrap) или `firejail`, если установлены;
-  - **Windows / прочее** — чистого аналога нет: слой отключается с предупреждением в логе,
-    остаётся изоляция через копию.
+    - **macOS** — `sandbox-exec`;
+    - **Linux** — `bwrap` (bubblewrap) или `firejail`, если установлены;
+    - **Windows / прочее** — чистого аналога нет: слой отключается с предупреждением в логе,
+      остаётся изоляция через копию.
 
   Если нужный инструмент не найден в `PATH`, ОС-слой тоже отключается с предупреждением.
   Отключить его вручную можно так:
@@ -168,3 +176,11 @@ implementation("io.github.aarondeluna:agentic-cli-runner:1.3.0")
 ```
 
 Убедитесь, что в сборке подключён репозиторий `mavenCentral()` (Maven Central подключён по умолчанию).
+
+## Лицензия
+
+Проект распространяется под лицензией [Apache License 2.0](LICENSE).
+
+---
+
+<sub>**Keywords / ключевые слова:** agentic CLI runner · agentic AI · AI coding agent · agent runner · Java library · run CLI from Java · Qwen Code · Codex CLI · Claude Code · stream-json parser · process runner · sandbox · CI automation · LLM agent · developer tools · Maven Central · agentic-cli-runner</sub>
