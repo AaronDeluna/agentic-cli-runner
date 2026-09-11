@@ -101,6 +101,28 @@ class AgentRunnerPropertiesTests {
     }
 
     @Test
+    void logLevelDefaultsToCompactWhenPropertyMissing() {
+        assertThat(AgentRunnerProperties.getLogLevel(new Properties())).isEqualTo(AgentLogLevel.COMPACT);
+    }
+
+    @Test
+    void logLevelParsedCaseInsensitively() {
+        Properties properties = new Properties();
+        properties.setProperty("agent.log.level", "FuLl");
+
+        assertThat(AgentRunnerProperties.getLogLevel(properties)).isEqualTo(AgentLogLevel.FULL);
+    }
+
+    @Test
+    void logLevelRejectsUnknownValue() {
+        Properties properties = new Properties();
+        properties.setProperty("agent.log.level", "verbose");
+
+        assertThatThrownBy(() -> AgentRunnerProperties.getLogLevel(properties))
+                .isInstanceOf(AgentRunnerConfigurationException.class);
+    }
+
+    @Test
     void sandboxIsDisabledByDefault() {
         assertThat(AgentRunnerProperties.isSandbox(new Properties())).isFalse();
     }

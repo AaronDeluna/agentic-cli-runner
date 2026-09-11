@@ -2,9 +2,12 @@ package io.github.ivanmilovanov.agentic.cli.runner.runner;
 
 import io.github.ivanmilovanov.agentic.cli.runner.api.AgentRunner;
 import io.github.ivanmilovanov.agentic.cli.runner.cli.CommandFactory;
+import io.github.ivanmilovanov.agentic.cli.runner.config.AgentLogLevel;
 import io.github.ivanmilovanov.agentic.cli.runner.context.AgentRunContext;
 import io.github.ivanmilovanov.agentic.cli.runner.exception.InvalidSkillNameException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.ivanmilovanov.agentic.cli.runner.executor.CommandExecutor;
+import io.github.ivanmilovanov.agentic.cli.runner.log.EventCompactor;
 import io.github.ivanmilovanov.agentic.cli.runner.log.RunnerLogWriter;
 import io.github.ivanmilovanov.agentic.cli.runner.model.AgentLogDto;
 import io.github.ivanmilovanov.agentic.cli.runner.model.AgentResultDto;
@@ -42,11 +45,12 @@ public class AgentRunnerImpl implements AgentRunner {
     private final Duration timeout;
     private final CommandFactory commandFactory;
     private final Sandbox sandbox;
+    private final AgentLogLevel logLevel;
     @Getter
     private final AgentRunContext agentRunContext;
 
     /**
-     * Совместимый конструктор без песочницы — запуск прямо в рабочей директории.
+     * Конструктор без песочницы и с уровнем лога по умолчанию ({@link AgentLogLevel#COMPACT}).
      */
     public AgentRunnerImpl(
             CommandExecutor commandExecutor,
@@ -57,9 +61,12 @@ public class AgentRunnerImpl implements AgentRunner {
             CommandFactory commandFactory
     ) {
         this(commandExecutor, agentStreamJsonParser, runnerLogWriter,
-                workingDirectory, timeout, commandFactory, new NoopSandbox());
+                workingDirectory, timeout, commandFactory, new NoopSandbox(), AgentLogLevel.COMPACT);
     }
 
+    /**
+     * Конструктор с песочницей и с уровнем лога по умолчанию ({@link AgentLogLevel#COMPACT}).
+     */
     public AgentRunnerImpl(
             CommandExecutor commandExecutor,
             AgentStreamJsonParser agentStreamJsonParser,
@@ -69,6 +76,23 @@ public class AgentRunnerImpl implements AgentRunner {
             CommandFactory commandFactory,
             Sandbox sandbox
     ) {
+        this(commandExecutor, agentStreamJsonParser, runnerLogWriter,
+                workingDirectory, timeout, commandFactory, sandbox, AgentLogLevel.COMPACT);
+    }
+
+    /**
+     * Полный конструктор: песочница и уровень лога задаются явно.
+     */
+    public AgentRunnerImpl(
+            CommandExecutor commandExecutor,
+            AgentStreamJsonParser agentStreamJsonParser,
+            RunnerLogWriter runnerLogWriter,
+            Path workingDirectory,
+            Duration timeout,
+            CommandFactory commandFactory,
+            Sandbox sandbox,
+            AgentLogLevel logLevel
+    ) {
         this.commandExecutor = commandExecutor;
         this.agentStreamJsonParser = agentStreamJsonParser;
         this.runnerLogWriter = runnerLogWriter;
@@ -76,6 +100,7 @@ public class AgentRunnerImpl implements AgentRunner {
         this.timeout = timeout;
         this.commandFactory = commandFactory;
         this.sandbox = sandbox;
+        this.logLevel = logLevel;
     }
 
     @Override
@@ -113,7 +138,7 @@ public class AgentRunnerImpl implements AgentRunner {
             Instant finishedAt = Instant.now();
 
             AgentLogDto agentLog = agentStreamJsonParser.parse(result.getStdout());
-            log.info("[AGENT_RESPONSE]: \n{}", agentLog.getEventsJson());
+            log.info("[AGENT_RESPONSE]: \n{}", responseEventsJson(agentLog));
 
             // Изменения файлов агентом (песочница) — снимаем до удаления копии.
             List<FileChangeDto> fileChanges = sandbox.summarizeChanges(agentRunContext, runDir);
@@ -138,11 +163,25 @@ public class AgentRunnerImpl implements AgentRunner {
                     .events(agentResult.getEvents())
                     .fileChanges(fileChanges.isEmpty() ? null : fileChanges)
                     .build();
-            runnerLogWriter.write(agentRunContext, logEntry);
+            runnerLogWriter.write(agentRunContext, logEntry, logLevel);
 
             return agentResult;
         } finally {
             sandbox.cleanup(runDir);
+        }
+    }
+
+    // JSON событий для лога [AGENT_RESPONSE] с учётом уровня: при COMPACT — без служебных полей.
+    // При сбое сериализации откатываемся к полному eventsJson, чтобы лог не ломал запуск.
+    private String responseEventsJson(AgentLogDto agentLog) {
+        if (logLevel != AgentLogLevel.COMPACT) {
+            return agentLog.getEventsJson();
+        }
+        try {
+            return EventCompactor.stripToJson(agentLog.getEvents());
+        } catch (JsonProcessingException e) {
+            log.warn("Не удалось сжать события для лога [AGENT_RESPONSE], пишем полный вывод", e);
+            return agentLog.getEventsJson();
         }
     }
 
