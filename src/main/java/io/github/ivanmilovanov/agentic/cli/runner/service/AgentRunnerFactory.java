@@ -4,6 +4,7 @@ import io.github.ivanmilovanov.agentic.cli.runner.api.AgentRunner;
 import io.github.ivanmilovanov.agentic.cli.runner.cli.CommandFactory;
 import io.github.ivanmilovanov.agentic.cli.runner.cli.OsAwareCommandResolver;
 import io.github.ivanmilovanov.agentic.cli.runner.cli.StreamJsonCommandFactory;
+import io.github.ivanmilovanov.agentic.cli.runner.config.AgentLogLevel;
 import io.github.ivanmilovanov.agentic.cli.runner.config.AgentRunnerProperties;
 import io.github.ivanmilovanov.agentic.cli.runner.config.OsType;
 import io.github.ivanmilovanov.agentic.cli.runner.executor.ApacheCommandExecutor;
@@ -80,6 +81,9 @@ public class AgentRunnerFactory {
         Duration effectiveTimeout = AgentRunnerProperties.getTimeout(properties, timeout);
         log.info("Таймаут выполнения: {} мин", effectiveTimeout.toMinutes());
 
+        AgentLogLevel logLevel = AgentRunnerProperties.getLogLevel(properties);
+        log.info("Уровень лога запуска: {}", logLevel);
+
         return new AgentRunnerImpl(
                 commandExecutor,
                 agentStreamJsonParser,
@@ -87,7 +91,8 @@ public class AgentRunnerFactory {
                 workingDirectory,
                 effectiveTimeout,
                 createCommandFactory(properties),
-                createSandbox(properties)
+                createSandbox(properties),
+                logLevel
         );
     }
 
