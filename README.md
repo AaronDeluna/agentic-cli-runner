@@ -90,8 +90,8 @@ agent.timeout=15
 
 ## Уровень лога запуска (agent.log.level)
 
-Каждый запуск сохраняется в `<buildDir>/agentic-cli-runner/<runId>.json`. Уровень детализации
-задаётся свойством `agent.log.level` — по аналогии с уровнями логирования, но их всего два:
+Уровень детализации лога задаётся свойством `agent.log.level` — по аналогии с уровнями
+логирования, но их всего два:
 
 | Значение | Что пишется |
 |---|---|
@@ -103,8 +103,15 @@ agent.timeout=15
 agent.log.level=full
 ```
 
+Уровень влияет на оба вывода событий:
+
+- файл запуска `<buildDir>/agentic-cli-runner/<runId>.json`;
+- строку `[AGENT_RESPONSE]` в slf4j-логе (полный поток событий).
+
 Вырезание применяется рекурсивно ко всем событиям; полезные поля (тип события, сообщения,
-`finalResult`, изменения файлов) остаются на месте.
+`finalResult`, изменения файлов) остаются на месте. Программный результат
+`AgentResultDto` (`getEvents()` / `getEventsJson()`) всегда содержит полные события —
+уровень на него не влияет.
 
 ## Песочница (sandbox)
 
@@ -178,20 +185,20 @@ agent.sandbox.exclude=.git,.idea,target,build
 <dependency>
     <groupId>io.github.aarondeluna</groupId>
     <artifactId>agentic-cli-runner</artifactId>
-    <version>1.3.0</version>
+    <version>1.4.0</version>
 </dependency>
 ```
 
 **Gradle** (Groovy DSL, `build.gradle`):
 
 ```groovy
-implementation 'io.github.aarondeluna:agentic-cli-runner:1.3.0'
+implementation 'io.github.aarondeluna:agentic-cli-runner:1.4.0'
 ```
 
 **Gradle** (Kotlin DSL, `build.gradle.kts`):
 
 ```kotlin
-implementation("io.github.aarondeluna:agentic-cli-runner:1.3.0")
+implementation("io.github.aarondeluna:agentic-cli-runner:1.4.0")
 ```
 
 Убедитесь, что в сборке подключён репозиторий `mavenCentral()` (Maven Central подключён по умолчанию).
