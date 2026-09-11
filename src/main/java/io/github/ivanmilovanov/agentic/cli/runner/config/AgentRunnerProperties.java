@@ -29,6 +29,9 @@ public final class AgentRunnerProperties {
     // Таймаут выполнения агента в минутах (общий для раннера, не привязан к CLI).
     public static final String TIMEOUT_PROPERTY = "agent.timeout";
 
+    // Уровень детализации лога запуска: compact (по умолчанию) или full.
+    public static final String LOG_LEVEL_PROPERTY = "agent.log.level";
+
     // Песочница: агент работает во временной копии проекта, наружу писать нельзя.
     //   agent.sandbox                 — вкл/выкл (true/false, по умолчанию false)
     //   agent.sandbox.os-enforcement  — жёсткий запрет записи на уровне ОС (по умолчанию true)
@@ -192,6 +195,25 @@ public final class AgentRunnerProperties {
             );
         }
         return Duration.ofMinutes(minutes);
+    }
+
+    /**
+     * Возвращает уровень детализации лога запуска.
+     * Ключ: {@code agent.log.level} — {@code full} или {@code compact}. Если не задан или пуст — {@code COMPACT}.
+     *
+     * @param props настройки
+     * @return уровень логирования
+     * @throws AgentRunnerConfigurationException если значение задано, но не является {@code full}/{@code compact}
+     */
+    public static AgentLogLevel getLogLevel(Properties props) {
+        String value = props.getProperty(LOG_LEVEL_PROPERTY);
+        try {
+            return AgentLogLevel.from(value, AgentLogLevel.COMPACT);
+        } catch (IllegalArgumentException e) {
+            throw new AgentRunnerConfigurationException(
+                    "Некорректное значение '" + LOG_LEVEL_PROPERTY + "' (ожидается full или compact): " + value, e
+            );
+        }
     }
 
     /**
