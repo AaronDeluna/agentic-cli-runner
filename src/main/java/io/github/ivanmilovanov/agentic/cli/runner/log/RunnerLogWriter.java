@@ -50,6 +50,7 @@ public class RunnerLogWriter {
         }
         return AgentRunLogDto.builder()
                 .runId(entry.getRunId())
+                .model(EventCompactor.extractModel(events))
                 .agentSet(entry.getAgentSet())
                 .startedAt(entry.getStartedAt())
                 .finishedAt(entry.getFinishedAt())

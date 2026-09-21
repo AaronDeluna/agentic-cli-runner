@@ -11,15 +11,40 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Урезание служебных полей событий stream-json для compact-лога:
- * рекурсивно вырезает {@code uuid}, {@code session_id} и {@code usage}. Исходные события не мутируются.
+ * Урезание служебных полей событий stream-json для compact-лога: рекурсивно вырезает
+ * идентификаторы и прочий шум, ничего не говорящий модели-судье
+ * ({@code uuid}, {@code session_id}, {@code usage}, {@code id}, {@code model},
+ * {@code tool_use_id}, {@code parent_tool_use_id}). Имя модели выносится в шапку лога
+ * один раз (см. {@link #extractModel(List)}), поэтому в самих событиях оно избыточно.
+ * Исходные события не мутируются.
  */
 public final class EventCompactor {
 
-    private static final Set<String> STRIPPED_FIELDS = Set.of("uuid", "session_id", "usage");
+    private static final Set<String> STRIPPED_FIELDS = Set.of(
+            "uuid", "session_id", "usage", "id", "model", "tool_use_id", "parent_tool_use_id");
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private EventCompactor() {
+    }
+
+    /**
+     * Находит имя модели в событиях (поле {@code model} на любом уровне). Так как во всём запуске
+     * модель одна и та же, её достаточно вынести в шапку лога один раз, а из событий вырезать.
+     *
+     * @param events исходные события (может быть {@code null})
+     * @return имя модели либо {@code null}, если поле нигде не встретилось
+     */
+    public static String extractModel(List<JsonNode> events) {
+        if (events == null) {
+            return null;
+        }
+        for (JsonNode event : events) {
+            JsonNode model = event.findValue("model");
+            if (model != null && model.isTextual() && !model.asText().isBlank()) {
+                return model.asText();
+            }
+        }
+        return null;
     }
 
     /**
