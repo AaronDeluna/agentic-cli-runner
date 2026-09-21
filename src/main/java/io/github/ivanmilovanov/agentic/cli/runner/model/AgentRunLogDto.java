@@ -16,6 +16,13 @@ import java.util.List;
 public class AgentRunLogDto {
 
     private final String runId;
+
+    /**
+     * Имя модели, вынесенное в шапку один раз (в compact-логе из событий оно вырезается).
+     * Для full-лога поле отсутствует — модель остаётся в каждом событии как есть.
+     */
+    private final String model;
+
     private final String agentSet;
     private final String startedAt;
     private final String finishedAt;

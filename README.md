@@ -95,7 +95,7 @@ agent.timeout=15
 
 | Значение | Что пишется |
 |---|---|
-| `compact` (по умолчанию) | Сжатый лог: из событий вырезаются служебные поля `uuid`, `session_id` и `usage` — идентификаторы и статистика по токенам, которые не нужны при чтении лога. |
+| `compact` (по умолчанию) | Сжатый лог: из событий вырезаются служебные поля `uuid`, `session_id`, `usage`, `id`, `model`, `tool_use_id`, `parent_tool_use_id` — идентификаторы и статистика по токенам, которые не несут смысла для чтения лога или модели-судьи. Имя модели выносится один раз в поле `model` в шапке лога. |
 | `full` | Полный лог: все события `stream-json` как есть. |
 
 ```properties
@@ -103,15 +103,18 @@ agent.timeout=15
 agent.log.level=full
 ```
 
-Уровень влияет на оба вывода событий:
+Уровень влияет на все три вывода событий:
 
 - файл запуска `<buildDir>/agentic-cli-runner/<runId>.json`;
-- строку `[AGENT_RESPONSE]` в slf4j-логе (полный поток событий).
+- строку `[AGENT_RESPONSE]` в slf4j-логе;
+- программный результат `AgentResultDto.getEventsJson()` — именно эта строка обычно
+  передаётся дальше (например, в контекст модели-судьи), поэтому при `compact` она тоже
+  приходит без служебных полей.
 
 Вырезание применяется рекурсивно ко всем событиям; полезные поля (тип события, сообщения,
-`finalResult`, изменения файлов) остаются на месте. Программный результат
-`AgentResultDto` (`getEvents()` / `getEventsJson()`) всегда содержит полные события —
-уровень на него не влияет.
+`finalResult`, изменения файлов) остаются на месте. Исключение — `AgentResultDto.getEvents()`
+(список `JsonNode`): он всегда отдаёт исходные события без урезания, на случай если нужен
+полный доступ к данным; сжимается только их сериализация `getEventsJson()`.
 
 ## Песочница (sandbox)
 
@@ -185,20 +188,20 @@ agent.sandbox.exclude=.git,.idea,target,build
 <dependency>
     <groupId>io.github.aarondeluna</groupId>
     <artifactId>agentic-cli-runner</artifactId>
-    <version>1.4.0</version>
+    <version>1.5.0</version>
 </dependency>
 ```
 
 **Gradle** (Groovy DSL, `build.gradle`):
 
 ```groovy
-implementation 'io.github.aarondeluna:agentic-cli-runner:1.4.0'
+implementation 'io.github.aarondeluna:agentic-cli-runner:1.5.0'
 ```
 
 **Gradle** (Kotlin DSL, `build.gradle.kts`):
 
 ```kotlin
-implementation("io.github.aarondeluna:agentic-cli-runner:1.4.0")
+implementation("io.github.aarondeluna:agentic-cli-runner:1.5.0")
 ```
 
 Убедитесь, что в сборке подключён репозиторий `mavenCentral()` (Maven Central подключён по умолчанию).
