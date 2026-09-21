@@ -138,7 +138,11 @@ public class AgentRunnerImpl implements AgentRunner {
             Instant finishedAt = Instant.now();
 
             AgentLogDto agentLog = agentStreamJsonParser.parse(result.getStdout());
-            log.info("[AGENT_RESPONSE]: \n{}", responseEventsJson(agentLog));
+            // eventsJson с учётом уровня лога: при COMPACT — без служебных полей. Именно эта
+            // строка отдаётся потребителю (например, модели-судье), поэтому компакт должен
+            // применяться здесь, а не только в файловом логе.
+            String effectiveEventsJson = effectiveEventsJson(agentLog);
+            log.info("[AGENT_RESPONSE]: \n{}", effectiveEventsJson);
 
             // Изменения файлов агентом (песочница) — снимаем до удаления копии.
             List<FileChangeDto> fileChanges = sandbox.summarizeChanges(agentRunContext, runDir);
@@ -149,7 +153,7 @@ public class AgentRunnerImpl implements AgentRunner {
                     result.getExitCode(),
                     result.isTimedOut(),
                     agentLog.getEvents(),
-                    agentLog.getEventsJson(),
+                    effectiveEventsJson,
                     agentLog.getFinalResult(),
                     fileChanges
             );
@@ -171,16 +175,17 @@ public class AgentRunnerImpl implements AgentRunner {
         }
     }
 
-    // JSON событий для лога [AGENT_RESPONSE] с учётом уровня: при COMPACT — без служебных полей.
-    // При сбое сериализации откатываемся к полному eventsJson, чтобы лог не ломал запуск.
-    private String responseEventsJson(AgentLogDto agentLog) {
+    // JSON событий с учётом уровня лога: при COMPACT — без служебных полей, иначе сырой eventsJson.
+    // Используется и для результата (AgentResultDto), и для лог-строки [AGENT_RESPONSE].
+    // При сбое сериализации откатываемся к полному eventsJson, чтобы компакт не ломал запуск.
+    private String effectiveEventsJson(AgentLogDto agentLog) {
         if (logLevel != AgentLogLevel.COMPACT) {
             return agentLog.getEventsJson();
         }
         try {
             return EventCompactor.stripToJson(agentLog.getEvents());
         } catch (JsonProcessingException e) {
-            log.warn("Не удалось сжать события для лога [AGENT_RESPONSE], пишем полный вывод", e);
+            log.warn("Не удалось сжать события для eventsJson, откатываемся на полный вывод", e);
             return agentLog.getEventsJson();
         }
     }
